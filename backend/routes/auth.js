@@ -156,12 +156,11 @@ router.post("/send-otp", async (req, res) => {
 
     // ── Generate & send OTP ────────────────────────────────────────────────
     const otp = createOtp(email);
-    const mailResult = await sendOtpEmail(email, otp);
+    await sendOtpEmail(email, otp);
 
     res.json({
       message: "OTP sent",
       email,
-      devOtp: mailResult?.delivered ? undefined : otp,
     });
   } catch (err) {
     console.error("[send-otp error]", err);

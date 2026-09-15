@@ -11,7 +11,7 @@ export default function OtpVerify() {
   const location = useLocation();
 
   // State passed from Login or Signup
-  const { email = "", mode = "login", signupPayload = null, devOtp = "" } = location.state || {};
+  const { email = "", mode = "login", signupPayload = null } = location.state || {};
 
   const [digits, setDigits] = useState(Array(OTP_LENGTH).fill(""));
   const [error, setError] = useState("");
@@ -24,23 +24,10 @@ export default function OtpVerify() {
 
   const inputRefs = useRef([]);
 
-  // Auto-fill devOtp if available for frictionless onboarding
-  const autoFillCode = (code) => {
-    if (!code) return;
-    const chars = String(code).slice(0, OTP_LENGTH).split("");
-    const newDigits = Array(OTP_LENGTH).fill("");
-    chars.forEach((c, i) => {
-      newDigits[i] = c;
-    });
-    setDigits(newDigits);
-    setError("");
-  };
-
   // Focus first box on mount
   useEffect(() => {
     inputRefs.current[0]?.focus();
-    if (devOtp) autoFillCode(devOtp);
-  }, [devOtp]);
+  }, []);
 
   // Redirect if no email (direct navigation)
   useEffect(() => {
@@ -264,44 +251,6 @@ export default function OtpVerify() {
                 {expiredOtp ? "Code expired" : `Expires in ${formatTime(timeLeft)}`}
               </span>
             </div>
-
-            {/* Dev / Demo Auto-fill Helper */}
-            {devOtp && (
-              <div
-                style={{
-                  margin: "0 auto 20px",
-                  maxWidth: "340px",
-                  padding: "8px 14px",
-                  borderRadius: "12px",
-                  background: "rgba(59, 130, 246, 0.12)",
-                  border: "1px solid rgba(59, 130, 246, 0.3)",
-                  fontSize: "12px",
-                  color: "#93c5fd",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "8px",
-                }}
-              >
-                <span>💡 Code: <strong style={{ color: "#ffffff", letterSpacing: "2px" }}>{devOtp}</strong></span>
-                <button
-                  type="button"
-                  onClick={() => autoFillCode(devOtp)}
-                  style={{
-                    background: "#2563eb",
-                    color: "#ffffff",
-                    border: "none",
-                    borderRadius: "6px",
-                    padding: "4px 8px",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Auto-fill
-                </button>
-              </div>
-            )}
 
             {/* OTP inputs */}
             <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginBottom: "28px" }}>

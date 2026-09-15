@@ -26,7 +26,6 @@ export default function Signup() {
         state: {
           email: form.email,
           mode: "signup",
-          devOtp: res.devOtp,
           // Pass full payload so Resend can re-trigger staging
           signupPayload: { mode: "signup", ...form },
           password: form.password,

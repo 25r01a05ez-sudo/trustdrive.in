@@ -9,7 +9,7 @@ export default function Login() {
 
   const [view, setView] = useState("login"); // 'login' | 'forgot_step1' | 'forgot_step2'
   const [form, setForm] = useState({ email: "", password: "" });
-  const [forgotData, setForgotData] = useState({ email: "", otp: "", newPassword: "", confirmPassword: "", devOtp: "" });
+  const [forgotData, setForgotData] = useState({ email: "", otp: "", newPassword: "", confirmPassword: "" });
   
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -46,12 +46,11 @@ export default function Login() {
     }
     setLoadingAction("otp");
     try {
-      const res = await sendOtp({ mode: "login", email: form.email.trim() });
+      await sendOtp({ mode: "login", email: form.email.trim() });
       navigate("/verify-otp", {
         state: {
           email: form.email.trim(),
           mode: "login",
-          devOtp: res.devOtp,
         },
       });
     } catch (err) {
@@ -72,8 +71,7 @@ export default function Login() {
     }
     setLoadingAction("reset_send");
     try {
-      const res = await sendOtp({ mode: "reset-password", email: forgotData.email.trim() });
-      setForgotData((d) => ({ ...d, devOtp: res.devOtp || "" }));
+      await sendOtp({ mode: "reset-password", email: forgotData.email.trim() });
       setSuccessMessage("Verification code sent to your email!");
       setView("forgot_step2");
     } catch (err) {
@@ -302,19 +300,6 @@ export default function Login() {
                 We sent a 6-digit code to <strong>{forgotData.email}</strong>.
               </p>
             </div>
-
-            {forgotData.devOtp && (
-              <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 flex items-center justify-between text-xs text-blue-700">
-                <span>💡 Code: <strong>{forgotData.devOtp}</strong></span>
-                <button
-                  type="button"
-                  onClick={() => setForgotData((d) => ({ ...d, otp: d.devOtp }))}
-                  className="bg-blue-600 text-white px-2 py-1 rounded text-[11px] font-bold"
-                >
-                  Auto-fill
-                </button>
-              </div>
-            )}
 
             <form onSubmit={handleConfirmResetPassword} className="space-y-4">
               <div>
