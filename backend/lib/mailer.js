@@ -18,6 +18,11 @@
  * ──────────────────────────────────────────────────────────────────────────
  */
 
+const dns = require("dns");
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
+
 const nodemailer = require("nodemailer");
 
 // Lazy-initialise so the server still boots even if the env vars are missing
@@ -29,8 +34,8 @@ function getTransporter() {
 
   const user = process.env.GMAIL_USER || process.env.EMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASS;
-  const host = process.env.EMAIL_HOST;
-  const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : undefined;
+  const host = process.env.EMAIL_HOST || "smtp.gmail.com";
+  const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : 465;
 
   if (!user || !pass) {
     console.warn(
@@ -39,25 +44,19 @@ function getTransporter() {
     return null;
   }
 
-  if (host && host !== "smtp.gmail.com") {
-    _transporter = nodemailer.createTransport({
-      host,
-      port: port || 587,
-      secure: port === 465,
-      auth: { user, pass },
-      connectionTimeout: 8000,
-      greetingTimeout: 8000,
-      socketTimeout: 8000,
-    });
-  } else {
-    _transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user, pass },
-      connectionTimeout: 8000,
-      greetingTimeout: 8000,
-      socketTimeout: 8000,
-    });
-  }
+  _transporter = nodemailer.createTransport({
+    host: host.includes("gmail") ? "smtp.gmail.com" : host,
+    port: port === 587 ? 587 : 465,
+    secure: port !== 587,
+    auth: { user, pass },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+    tls: {
+      rejectUnauthorized: true,
+      servername: host.includes("gmail") ? "smtp.gmail.com" : host,
+    },
+  });
 
   return _transporter;
 }
