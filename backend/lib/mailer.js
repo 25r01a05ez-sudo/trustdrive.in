@@ -75,8 +75,8 @@ async function sendOtpEmail(toEmail, otp) {
 
   if (!transporter) {
     // Dev fallback — log OTP to server console
-    console.log(`\n📬 [DEV] OTP for ${toEmail}: ${otp}\n`);
-    return;
+    console.warn(`\n📬 [mailer] EMAIL_USER / EMAIL_PASS not configured in environment variables. OTP for ${toEmail}: ${otp}\n`);
+    return { delivered: false, error: "Email credentials not configured on server (EMAIL_USER / EMAIL_PASS missing in Render environment variables)" };
   }
 
   const mailOptions = {

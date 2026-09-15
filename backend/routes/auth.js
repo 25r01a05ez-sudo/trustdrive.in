@@ -156,10 +156,17 @@ router.post("/send-otp", async (req, res) => {
 
     // ── Generate & send OTP ────────────────────────────────────────────────
     const otp = createOtp(email);
-    await sendOtpEmail(email, otp);
+    const mailResult = await sendOtpEmail(email, otp);
+
+    if (mailResult && !mailResult.delivered) {
+      console.error(`[send-otp] Failed to deliver OTP email to ${email}: ${mailResult.error}`);
+      return res.status(500).json({
+        error: `Could not send verification email (${mailResult.error || "Delivery failed"}). Please ensure EMAIL_USER and EMAIL_PASS are configured on your backend host.`,
+      });
+    }
 
     res.json({
-      message: "OTP sent",
+      message: "Verification code sent to your email",
       email,
     });
   } catch (err) {
