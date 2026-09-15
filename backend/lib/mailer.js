@@ -46,8 +46,9 @@ function getTransporter() {
 
   _transporter = nodemailer.createTransport({
     host: host.includes("gmail") ? "smtp.gmail.com" : host,
-    port: port === 587 ? 587 : 465,
-    secure: port !== 587,
+    port: 465,
+    secure: true,
+    family: 4, // Strictly enforce IPv4 socket
     auth: { user, pass },
     connectionTimeout: 10000,
     greetingTimeout: 10000,
