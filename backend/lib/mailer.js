@@ -23,10 +23,10 @@ function getBrevoClient() {
   const key = process.env.BREVO_API_KEY;
   if (!key) return null;
 
-  const defaultClient = Brevo.ApiClient.instance;
-  defaultClient.authentications["api-key"].apiKey = key;
-
+  // Set API key directly on the instance (not via ApiClient.instance)
   _apiInstance = new Brevo.TransactionalEmailsApi();
+  _apiInstance.authentications["api-key"].apiKey = key;
+
   return _apiInstance;
 }
 
