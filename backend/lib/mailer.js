@@ -19,23 +19,32 @@
  */
 
 const dns = require("dns");
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder("ipv4first");
-}
-
 const nodemailer = require("nodemailer");
 
-// Lazy-initialise so the server still boots even if the env vars are missing
-// (falls back to console-logging the OTP for local dev).
-let _transporter = null;
+/**
+ * Resolve a hostname to an IPv4 address.
+ * This is the nuclear option to prevent Render/cloud hosts from
+ * attempting IPv6 connections that fail with ENETUNREACH.
+ */
+function resolveIPv4(hostname) {
+  return new Promise((resolve, reject) => {
+    dns.resolve4(hostname, (err, addresses) => {
+      if (err || !addresses || addresses.length === 0) {
+        reject(err || new Error(`No IPv4 address found for ${hostname}`));
+      } else {
+        resolve(addresses[0]);
+      }
+    });
+  });
+}
 
-function getTransporter() {
-  if (_transporter) return _transporter;
-
+/**
+ * Create a fresh transporter each time, using a resolved IPv4 address.
+ * This avoids Nodemailer's internal DNS resolution which may pick IPv6.
+ */
+async function createTransporter() {
   const user = process.env.GMAIL_USER || process.env.EMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASS;
-  const host = process.env.EMAIL_HOST || "smtp.gmail.com";
-  const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) : 465;
 
   if (!user || !pass) {
     console.warn(
@@ -44,22 +53,34 @@ function getTransporter() {
     return null;
   }
 
-  _transporter = nodemailer.createTransport({
-    host: host.includes("gmail") ? "smtp.gmail.com" : host,
+  // Resolve smtp.gmail.com to a raw IPv4 address (e.g. 142.250.x.x)
+  // so Nodemailer cannot accidentally use IPv6
+  const smtpHost = "smtp.gmail.com";
+  let ipv4Address;
+  try {
+    ipv4Address = await resolveIPv4(smtpHost);
+    console.log(`[mailer] Resolved ${smtpHost} → ${ipv4Address} (IPv4)`);
+  } catch (dnsErr) {
+    console.error(`[mailer] DNS IPv4 resolution failed for ${smtpHost}:`, dnsErr.message);
+    // Fallback: try connecting with hostname anyway
+    ipv4Address = smtpHost;
+  }
+
+  return nodemailer.createTransport({
+    host: ipv4Address,
     port: 465,
     secure: true,
-    family: 4, // Strictly enforce IPv4 socket
     auth: { user, pass },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 15000,
     tls: {
+      // The TLS certificate is issued for smtp.gmail.com, not the IP,
+      // so we must set servername for SNI to validate properly.
+      servername: smtpHost,
       rejectUnauthorized: true,
-      servername: host.includes("gmail") ? "smtp.gmail.com" : host,
     },
   });
-
-  return _transporter;
 }
 
 /**
@@ -71,12 +92,18 @@ function getTransporter() {
  */
 async function sendOtpEmail(toEmail, otp) {
   const senderEmail = process.env.GMAIL_USER || process.env.EMAIL_USER || "trustdrive.co.in@gmail.com";
-  const transporter = getTransporter();
+
+  let transporter;
+  try {
+    transporter = await createTransporter();
+  } catch (err) {
+    console.error("[mailer] Failed to create transporter:", err.message);
+    return { delivered: false, error: err.message };
+  }
 
   if (!transporter) {
-    // Dev fallback — log OTP to server console
-    console.warn(`\n📬 [mailer] EMAIL_USER / EMAIL_PASS not configured in environment variables. OTP for ${toEmail}: ${otp}\n`);
-    return { delivered: false, error: "Email credentials not configured on server (EMAIL_USER / EMAIL_PASS missing in Render environment variables)" };
+    console.warn(`\n📬 [mailer] EMAIL_USER / EMAIL_PASS not configured. OTP for ${toEmail}: ${otp}\n`);
+    return { delivered: false, error: "Email credentials not configured on server" };
   }
 
   const mailOptions = {
@@ -130,7 +157,7 @@ async function sendOtpEmail(toEmail, otp) {
     console.log(`[mailer] OTP email sent successfully to ${toEmail}`);
     return { delivered: true };
   } catch (err) {
-    console.warn(`[mailer] Failed to send email via SMTP (${err.message}). Logging OTP to console fallback.`);
+    console.warn(`[mailer] SMTP send failed (${err.message})`);
     return { delivered: false, error: err.message };
   }
 }
