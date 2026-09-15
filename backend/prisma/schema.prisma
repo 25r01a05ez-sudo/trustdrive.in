@@ -1,0 +1,213 @@
+// TrustDrive — Prisma schema
+// Maps directly to the "Database Layer" box in the architecture diagram.
+// Works with any Postgres, including Supabase — see the README's "Using
+// Supabase" section for the two connection strings this schema expects
+// (DATABASE_URL for the app, DIRECT_URL for migrations).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Supabase (and other poolers like PgBouncer) need a second, unpooled
+  // connection string for running migrations. Local/plain Postgres can set
+  // DIRECT_URL to the same value as DATABASE_URL.
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  buyer
+  dealer
+  admin
+}
+
+// Dealer KYC status (whole dealership, set by an admin in the dashboard)
+enum VerificationStatus {
+  pending
+  verified
+  rejected
+}
+
+// Per-vehicle RC/VAHAN check status (set automatically by the RC lookup)
+enum VehicleVerificationStatus {
+  pending
+  verified
+  declined
+}
+
+enum VehicleStatus {
+  active
+  sold
+  draft
+}
+
+enum LeadChannel {
+  call
+  whatsapp
+  email
+}
+
+enum LeadStatus {
+  new
+  contacted
+  closed
+}
+
+model User {
+  id           String   @id @default(cuid())
+  role         Role     @default(buyer)
+  name         String
+  email        String   @unique
+  phone        String?
+  passwordHash String
+  dealerId     String?
+  dealer       Dealer?  @relation(fields: [dealerId], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+
+  @@index([dealerId])
+}
+
+model Dealer {
+  id                 String             @id @default(cuid())
+  name               String
+  gstNumber          String             @unique
+  city               String
+  address            String?
+  verificationStatus VerificationStatus @default(pending)
+  verifiedAt         DateTime?
+  kycDocs            String[]           @default([])
+  // Full multi-step dealer-verification wizard payload (business info,
+  // owner details, document metadata/previews, bank details, photos,
+  // declarations). SENSITIVE — contains PAN/Aadhaar/bank details. Never
+  // returned from public dealer endpoints; only from admin-only routes.
+  // See backend/routes/dealers.js.
+  verification       Json?
+  // Doubles as the dealer's public contact number (Call button) and their
+  // WhatsApp deep-link target for buyer enquiries.
+  whatsapp           String?
+  rating             Float              @default(0)
+  reviewCount        Int                @default(0)
+  createdAt          DateTime           @default(now())
+
+  users    User[]
+  vehicles Vehicle[]
+  leads    Lead[]
+  reviews  Review[]
+  site     DealerSite?
+
+  @@index([city])
+  @@index([verificationStatus])
+}
+
+// A dealer's own AI-generated microsite, served on its own subdomain
+// (e.g. primemotors.trustdrive.in). Content is stored as structured,
+// whitelisted fields -- never raw HTML -- so AI-generated text can never
+// inject scripts into a page served to the public. See
+// backend/lib/aiSiteGenerator.js and backend/routes/dealerSites.js.
+model DealerSite {
+  id           String   @id @default(cuid())
+  dealerId     String   @unique
+  dealer       Dealer   @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+  subdomain    String   @unique
+  published    Boolean  @default(false)
+  lastPrompt   String?
+  theme        Json     // { primaryColor, accentColor, font }
+  hero         Json      // { headline, subheadline }
+  about        Json      // { heading, body }
+  highlights   Json     // [{ title, body }]
+  contact      Json      // { ctaText }
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([subdomain])
+}
+
+model Vehicle {
+  id                   String                     @id @default(cuid())
+  dealerId             String
+  dealer               Dealer                     @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+  brand                String
+  model                String
+  year                 Int
+  price                Int
+  km                   Int                        @default(0)
+  fuel                 String
+  transmission         String
+  owners               Int                        @default(1)
+  chassisNumber        String
+  registrationNumber   String
+  rcVerified           Boolean                    @default(false)
+  verificationStatus   VehicleVerificationStatus  @default(pending)
+  // Full VAHAN-style RC lookup result (registration status, engine number,
+  // insurance, PUC, financier/hypothecation, RTO, etc.) — see
+  // backend/lib/rcVerification.js.
+  verificationDetails  Json?
+  images               String[]                   @default([])
+  description          String?
+  status               VehicleStatus              @default(active)
+  listedAt             DateTime                   @default(now())
+
+  leads Lead[]
+
+  @@index([dealerId])
+  @@index([brand, model])
+  @@index([status])
+  @@index([verificationStatus])
+}
+
+model Lead {
+  id         String      @id @default(cuid())
+  vehicleId  String
+  vehicle    Vehicle     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  dealerId   String
+  dealer     Dealer      @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+  buyerName  String
+  buyerPhone String
+  channel    LeadChannel @default(whatsapp)
+  message    String?
+  status     LeadStatus  @default(new)
+  createdAt  DateTime    @default(now())
+
+  @@index([dealerId])
+  @@index([status])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  dealerId  String
+  dealer    Dealer   @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+  buyerName String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@index([dealerId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  dealerId  String
+  type      String
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([dealerId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  timestamp DateTime @default(now())
+  action    String
+  userId    String?
+  userRole  String?
+  vehicleId String?
+  dealerId  String?
+  details   Json?
+
+  @@index([userId])
+  @@index([vehicleId])
+  @@index([action])
+  @@index([timestamp])
+}

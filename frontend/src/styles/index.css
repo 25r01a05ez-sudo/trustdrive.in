@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  font-feature-settings: "ss01" 1;
+}
+
+::selection {
+  background: #B49054;
+  color: #12241D;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid #B49054;
+  outline-offset: 2px;
+}
+
+.hairline {
+  border-color: #DEDBD0;
+}
+
+/* Verification stamp — the signature element, reused as a badge everywhere */
+.stamp {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid currentColor;
+  border-radius: 9999px;
+  transform: rotate(-6deg);
+}
+.stamp::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1px dashed currentColor;
+  border-radius: 9999px;
+  opacity: 0.55;
+}
+
+.paper-texture {
+  background-image: radial-gradient(circle at 1px 1px, rgba(18,36,29,0.06) 1px, transparent 0);
+  background-size: 18px 18px;
+}
