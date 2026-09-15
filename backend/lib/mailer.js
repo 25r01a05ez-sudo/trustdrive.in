@@ -70,7 +70,7 @@ function getTransporter() {
  * @param {string} otp      The 6-digit OTP string
  */
 async function sendOtpEmail(toEmail, otp) {
-  const senderEmail = process.env.GMAIL_USER || process.env.EMAIL_USER || "noreply@trustdrive.in";
+  const senderEmail = process.env.GMAIL_USER || process.env.EMAIL_USER || "trustdrive.co.in@gmail.com";
   const transporter = getTransporter();
 
   if (!transporter) {
