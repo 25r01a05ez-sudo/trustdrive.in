@@ -10,10 +10,28 @@
  * without changing the frontend contract.
  */
 require("dotenv").config();
+
+// ── GLOBAL IPv4 ENFORCEMENT ─────────────────────────────────────────────
+// Render's infrastructure does not support outbound IPv6. Node.js and
+// Nodemailer default to IPv6 when available, causing ENETUNREACH errors.
+// This patches dns.lookup at the lowest level so that EVERY outbound
+// connection in this process (including Nodemailer's internal sockets)
+// is forced to resolve and connect over IPv4 only. No library can bypass
+// this because it operates at the Node.js core level.
 const dns = require("dns");
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder("ipv4first");
-}
+const _originalLookup = dns.lookup;
+dns.lookup = function (hostname, options, callback) {
+  if (typeof options === "function") {
+    callback = options;
+    options = { family: 4 };
+  } else if (typeof options === "number") {
+    options = { family: 4 };
+  } else {
+    options = Object.assign({}, options, { family: 4 });
+  }
+  return _originalLookup.call(this, hostname, options, callback);
+};
+// ─────────────────────────────────────────────────────────────────────────
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
