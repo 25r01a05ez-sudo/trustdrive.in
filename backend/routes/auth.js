@@ -112,24 +112,26 @@ router.get("/me", requireAuth, async (req, res) => {
  */
 router.post("/send-otp", async (req, res) => {
   try {
-    const { mode = "login", email, password, name, phone, role = "buyer" } = req.body || {};
+    let { mode = "login", email, password, name, phone, role = "buyer" } = req.body || {};
 
     if (!email) {
       return res.status(400).json({ error: "email is required" });
     }
+    email = String(email).trim().toLowerCase();
+
     if (!["login", "signup", "reset-password"].includes(mode)) {
       return res.status(400).json({ error: "mode must be 'login', 'signup', or 'reset-password'" });
     }
 
-    if (mode === "login" || mode === "reset-password") {
-      // ── Passwordless OTP Login or Password Reset ───────────────────────
+    if (mode === "reset-password") {
+      // ── Password Reset requires an existing account ────────────────────
       const user = await store.findUserByEmail(email);
       if (!user) {
         return res.status(404).json({
           error: "No account found with this email address. Please register a new account.",
         });
       }
-    } else {
+    } else if (mode === "signup") {
       // ── Signup — validate & stage the new account ──────────────────────
       if (!name) {
         return res.status(400).json({ error: "name is required for signup" });
@@ -143,7 +145,7 @@ router.post("/send-otp", async (req, res) => {
       }
 
       const passwordHash = await bcrypt.hash(password, 10);
-      pendingSignups.set(email.toLowerCase(), {
+      pendingSignups.set(email, {
         name,
         email,
         phone,
@@ -177,11 +179,13 @@ router.post("/send-otp", async (req, res) => {
  */
 router.post("/verify-otp", async (req, res) => {
   try {
-    const { mode = "login", email, otp, signupPayload } = req.body || {};
+    let { mode = "login", email, otp, signupPayload } = req.body || {};
 
     if (!email || !otp) {
       return res.status(400).json({ error: "email and otp are required" });
     }
+    email = String(email).trim().toLowerCase();
+    otp = String(otp).trim();
 
     // ── Verify OTP ─────────────────────────────────────────────────────────
     const result = checkOtp(email, otp);
@@ -189,41 +193,46 @@ router.post("/verify-otp", async (req, res) => {
       return res.status(401).json({ error: result.reason });
     }
 
-    let user;
+    let user = await store.findUserByEmail(email);
 
     if (mode === "signup") {
       // ── Create the account now that OTP is confirmed ────────────────────
-      let pending = pendingSignups.get(email.toLowerCase());
-      
-      // Fallback: If in-memory pending map was cleared, recover from signupPayload
-      if (!pending && signupPayload && signupPayload.password) {
-        const passwordHash = await bcrypt.hash(signupPayload.password, 10);
-        pending = {
-          name: signupPayload.name,
-          email: signupPayload.email,
-          phone: signupPayload.phone || "",
-          passwordHash,
-          role: ["buyer", "dealer"].includes(signupPayload.role) ? signupPayload.role : "buyer",
-        };
-      }
+      if (!user) {
+        let pending = pendingSignups.get(email);
+        
+        // Fallback: If in-memory pending map was cleared, recover from signupPayload
+        if (!pending && signupPayload && signupPayload.password) {
+          const passwordHash = await bcrypt.hash(signupPayload.password, 10);
+          pending = {
+            name: signupPayload.name || email.split("@")[0],
+            email,
+            phone: signupPayload.phone || "",
+            passwordHash,
+            role: ["buyer", "dealer"].includes(signupPayload.role) ? signupPayload.role : "buyer",
+          };
+        }
 
-      // Check if user is already in database
-      const existing = await store.findUserByEmail(email);
-      if (existing) {
-        user = existing;
-      } else if (pending) {
-        pendingSignups.delete(email.toLowerCase());
-        user = await store.createUser(pending);
-      } else {
-        return res.status(400).json({
-          error: "Signup session expired. Please return to the signup page.",
-        });
+        if (pending) {
+          pendingSignups.delete(email);
+          user = await store.createUser(pending);
+        } else {
+          return res.status(400).json({
+            error: "Signup session expired. Please return to the signup page.",
+          });
+        }
       }
     } else {
-      // ── Login — fetch existing user ─────────────────────────────────────
-      user = await store.findUserByEmail(email);
+      // ── Login — fetch existing user or auto-create for passwordless ───
       if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        const randomPass = Math.random().toString(36).slice(-10);
+        const passwordHash = await bcrypt.hash(randomPass, 10);
+        user = await store.createUser({
+          name: email.split("@")[0],
+          email,
+          phone: "",
+          passwordHash,
+          role: "buyer",
+        });
       }
     }
 

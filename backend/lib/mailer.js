@@ -39,17 +39,23 @@ function getTransporter() {
     return null;
   }
 
-  if (host) {
+  if (host && host !== "smtp.gmail.com") {
     _transporter = nodemailer.createTransport({
       host,
       port: port || 587,
       secure: port === 465,
       auth: { user, pass },
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 8000,
     });
   } else {
     _transporter = nodemailer.createTransport({
       service: "gmail",
       auth: { user, pass },
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 8000,
     });
   }
 

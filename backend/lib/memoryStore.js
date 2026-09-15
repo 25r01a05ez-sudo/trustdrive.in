@@ -13,13 +13,16 @@ function computeDealerRating(dealerId) {
 module.exports = {
   // --- users ---
   async findUserByEmail(email) {
-    return db.users.find((u) => u.email === email) || null;
+    if (!email) return null;
+    const target = email.trim().toLowerCase();
+    return db.users.find((u) => u.email && u.email.toLowerCase() === target) || null;
   },
   async findUserById(id) {
     return db.users.find((u) => u.id === id) || null;
   },
   async createUser(data) {
-    const user = { id: nextId("u"), createdAt: new Date().toISOString(), ...data };
+    const cleanEmail = data.email ? data.email.trim().toLowerCase() : data.email;
+    const user = { id: nextId("u"), createdAt: new Date().toISOString(), ...data, email: cleanEmail };
     db.users.push(user);
     return user;
   },

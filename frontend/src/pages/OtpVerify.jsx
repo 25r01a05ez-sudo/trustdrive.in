@@ -73,12 +73,31 @@ export default function OtpVerify() {
   };
 
   const handleChange = (index, value) => {
-    const digit = value.replace(/\D/g, "").slice(-1);
+    const cleaned = value.replace(/\D/g, "");
+    if (!cleaned) {
+      const newDigits = [...digits];
+      newDigits[index] = "";
+      setDigits(newDigits);
+      setError("");
+      return;
+    }
+    if (cleaned.length > 1) {
+      const newDigits = [...digits];
+      const chars = cleaned.slice(0, OTP_LENGTH - index).split("");
+      chars.forEach((ch, i) => {
+        if (index + i < OTP_LENGTH) newDigits[index + i] = ch;
+      });
+      setDigits(newDigits);
+      setError("");
+      const nextFocus = Math.min(index + cleaned.length, OTP_LENGTH - 1);
+      inputRefs.current[nextFocus]?.focus();
+      return;
+    }
     const newDigits = [...digits];
-    newDigits[index] = digit;
+    newDigits[index] = cleaned;
     setDigits(newDigits);
     setError("");
-    if (digit && index < OTP_LENGTH - 1) {
+    if (index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -126,15 +145,15 @@ export default function OtpVerify() {
       const user = await verifyOtp({ mode, email, otp, signupPayload });
       setVerified(true);
       setTimeout(() => {
-        // For signup dealers: redirect to /dealer — the dashboard handles
-        // showing the verification wizard for newly created, unverified dealers.
+        // Redirect according to user role
+        const role = user?.role;
         navigate(
-          user.role === "dealer" ? "/dealer" : user.role === "admin" ? "/admin" : "/",
+          role === "dealer" ? "/dealer" : role === "admin" ? "/admin" : "/",
           { replace: true }
         );
-      }, 1200);
+      }, 1000);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Invalid or expired OTP code.");
       // Shake the inputs
       setDigits(Array(OTP_LENGTH).fill(""));
       inputRefs.current[0]?.focus();

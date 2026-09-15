@@ -28,13 +28,21 @@ function unpackVehicle(v) {
 module.exports = {
   // --- users ---
   async findUserByEmail(email) {
-    return prisma.user.findUnique({ where: { email } });
+    if (!email) return null;
+    const clean = email.trim();
+    return prisma.user.findFirst({
+      where: { email: { equals: clean, mode: "insensitive" } },
+    });
   },
   async findUserById(id) {
     return prisma.user.findUnique({ where: { id } });
   },
   async createUser(data) {
-    return prisma.user.create({ data });
+    const cleanData = {
+      ...data,
+      email: data.email ? data.email.trim().toLowerCase() : data.email,
+    };
+    return prisma.user.create({ data: cleanData });
   },
   async setUserDealerId(userId, dealerId) {
     return prisma.user.update({ where: { id: userId }, data: { dealerId } });
