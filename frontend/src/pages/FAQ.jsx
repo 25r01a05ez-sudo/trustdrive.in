@@ -2,7 +2,7 @@ import { useState } from "react";
 
 const FAQS = [
   {
-    q: "How is a car actually verified on TrustDrive?",
+    q: "How is a car actually verified on TrustDrive India?",
     a: "Every dealer submits GST and KYC documents before they can list anything, and our team reviews those manually. Separately, each car's registration number and chassis number are checked against VAHAN (India's government vehicle registry) — that check covers registration status, ownership history, insurance, PUC, and any financier/hypothecation on the vehicle. A listing only goes live once both the dealer and the specific car pass.",
   },
   {
@@ -14,12 +14,12 @@ const FAQS = [
     a: "The listing is marked declined and stays hidden from buyers. The dealer sees exactly why (usually a mismatched chassis number or an inactive registration) and can correct the details and re-run the check.",
   },
   {
-    q: "Is buying through TrustDrive free?",
+    q: "Is buying through TrustDrive India free?",
     a: "Yes — browsing, contacting dealers, and submitting enquiries are all free for buyers.",
   },
   {
     q: "How do I contact a dealer?",
-    a: "Every listing has a contact form that reaches the dealer directly over WhatsApp, call, or email — TrustDrive doesn't sit in between your conversation.",
+    a: "Every listing has a contact form that reaches the dealer directly over WhatsApp, call, or email — TrustDrive India doesn't sit in between your conversation.",
   },
   {
     q: "How long does dealer verification take?",
@@ -33,7 +33,7 @@ export default function FAQ() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
       <h1 className="font-display text-3xl font-semibold text-ink">Frequently asked questions</h1>
-      <p className="mt-2 text-sm text-muted">Everything about how verification, buying, and selling works on TrustDrive.</p>
+      <p className="mt-2 text-sm text-muted">Everything about how verification, buying, and selling works on TrustDrive India.</p>
 
       <div className="mt-8 divide-y divide-line border-y hairline">
         {FAQS.map((item, i) => (

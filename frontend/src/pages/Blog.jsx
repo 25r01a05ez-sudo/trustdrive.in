@@ -11,7 +11,7 @@ const POSTS = [
     title: "Why we check GST and KYC before a dealer lists anything",
     date: "2026-05-18",
     excerpt: "A verified badge only means something if it's hard to get.",
-    body: "It would be easy to let any dealer sign up and list cars immediately — it's better for growth numbers in the short term. We don't do that, because a 'verified' badge that everyone has is worse than no badge at all. Every dealer on TrustDrive submits their GST registration and business KYC, and a real person on our team checks it before their first car goes live. It adds friction. It's meant to.",
+    body: "It would be easy to let any dealer sign up and list cars immediately — it's better for growth numbers in the short term. We don't do that, because a 'verified' badge that everyone has is worse than no badge at all. Every dealer on TrustDrive India submits their GST registration and business KYC, and a real person on our team checks it before their first car goes live. It adds friction. It's meant to.",
   },
   {
     title: "Insurance and PUC: the two documents everyone forgets to ask about",
@@ -30,7 +30,7 @@ export default function Blog() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="font-display text-3xl font-semibold text-ink">From the TrustDrive blog</h1>
+      <h1 className="font-display text-3xl font-semibold text-ink">From the TrustDrive India blog</h1>
       <p className="mt-2 text-sm text-muted">Notes on buying smart and what verification actually catches.</p>
 
       <div className="mt-8 space-y-4">

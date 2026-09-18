@@ -29,6 +29,12 @@ const db = {
       rating: 4.6,
       reviewCount: 128,
       whatsapp: "+919876500002",
+      // Listing credits (see payments.js)
+      freeCreditsTotal: 5,
+      freeCreditsUsed: 2,
+      packageCreditsTotal: 0,
+      packageCreditsUsed: 0,
+      currentPackage: null,
     },
     {
       id: "d-2",
@@ -42,6 +48,11 @@ const db = {
       rating: 4.1,
       reviewCount: 34,
       whatsapp: "+919876500009",
+      freeCreditsTotal: 5,
+      freeCreditsUsed: 0,
+      packageCreditsTotal: 0,
+      packageCreditsUsed: 0,
+      currentPackage: null,
     },
     {
       id: "d-3",
@@ -55,6 +66,11 @@ const db = {
       rating: 4.8,
       reviewCount: 212,
       whatsapp: "+919876500011",
+      freeCreditsTotal: 5,
+      freeCreditsUsed: 0,
+      packageCreditsTotal: 0,
+      packageCreditsUsed: 0,
+      currentPackage: null,
     },
   ],
 
@@ -190,6 +206,23 @@ const db = {
   notifications: [],
   logs: [],
   auditLogs: [],
+  // Discount coupons created by admin
+  coupons: [
+    {
+      id: "coupon-demo-1",
+      code: "FIRST500",
+      discountType: "fixed",
+      discountValue: 500,
+      expiresAt: null,
+      active: true,
+      usageLimit: 10,
+      usedCount: 0,
+      usedByDealerId: null,
+      createdAt: new Date().toISOString(),
+    },
+  ],
+  // Records of package purchases by dealers
+  dealerPackages: [],
 };
 
 function nextId(prefix) {

@@ -71,6 +71,8 @@ app.use((req, res, next) => {
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/dealers", require("./routes/dealers"));
 app.use("/api/vehicles", require("./routes/vehicles"));
+app.use("/api/payments", require("./routes/payments"));
+app.use("/api/coupons", require("./routes/coupons"));
 app.use("/api/search", require("./routes/search"));
 app.use("/api/verification", require("./routes/verification"));
 app.use("/api/leads", require("./routes/leads"));

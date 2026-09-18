@@ -14,6 +14,15 @@ function unpackVehicle(v) {
   const approvedBy = meta.approvedBy || null;
   const featured = Boolean(meta.featured);
 
+  // Derive listingStatus from DB fields (fallback for older records)
+  let listingStatus = v.listingStatus || "pending_review";
+  if (!v.listingStatus) {
+    if (v.status === "active" && approvalStatus === "Approved") listingStatus = "active";
+    else if (approvalStatus === "Approved — Payment Required") listingStatus = "approved_payment_required";
+    else if (approvalStatus === "Rejected") listingStatus = "rejected";
+    else listingStatus = "pending_review";
+  }
+
   return {
     ...v,
     approvalStatus,
@@ -22,6 +31,11 @@ function unpackVehicle(v) {
     approvedAt,
     approvedBy,
     featured,
+    listingStatus,
+    paymentStatus: v.paymentStatus || "unpaid",
+    listingActivatedAt: v.listingActivatedAt || null,
+    listingExpiresAt: v.listingExpiresAt || null,
+    renewalReminderSent: v.renewalReminderSent || false,
   };
 }
 
@@ -80,6 +94,49 @@ module.exports = {
   async unsetUsersDealerId(dealerId) {
     await prisma.user.updateMany({ where: { dealerId }, data: { dealerId: null } });
     return true;
+  },
+  async findUserByDealerId(dealerId) {
+    return prisma.user.findFirst({ where: { dealerId } });
+  },
+
+  // --- dealer packages ---
+  async createDealerPackage(data) {
+    return prisma.dealerPackage.create({ data });
+  },
+  async listDealerPackages(dealerId) {
+    return prisma.dealerPackage.findMany({ where: { dealerId }, orderBy: { purchasedAt: "desc" } });
+  },
+
+  // --- coupons ---
+  async listCoupons() {
+    return prisma.coupon.findMany({ orderBy: { createdAt: "desc" } });
+  },
+  async findCouponById(id) {
+    return prisma.coupon.findUnique({ where: { id } });
+  },
+  async findCouponByCode(code) {
+    return prisma.coupon.findUnique({ where: { code: code.toUpperCase() } });
+  },
+  async createCoupon(data) {
+    return prisma.coupon.create({ data });
+  },
+  async updateCoupon(id, patch) {
+    return prisma.coupon.update({ where: { id }, data: patch });
+  },
+  async deleteCoupon(id) {
+    await prisma.coupon.delete({ where: { id } });
+    return true;
+  },
+  async markCouponUsed(couponId, dealerId) {
+    const coupon = await prisma.coupon.findUnique({ where: { id: couponId } });
+    if (!coupon) return null;
+    return prisma.coupon.update({
+      where: { id: couponId },
+      data: {
+        usedCount: coupon.usedCount + 1,
+        usedByDealerId: dealerId,
+      },
+    });
   },
 
   // --- vehicles ---
@@ -196,7 +253,7 @@ module.exports = {
 
     const meta = {
       ...(existing.verificationDetails || {}),
-      approvalStatus: "Approved",
+      approvalStatus: "Approved — Payment Required",
       rejectionReason: null,
       approvedAt: new Date().toISOString(),
       approvedBy: adminUserId || "admin",
@@ -205,7 +262,8 @@ module.exports = {
     const updated = await prisma.vehicle.update({
       where: { id },
       data: {
-        status: "active",
+        status: "draft", // stays hidden until payment
+        listingStatus: "approved_payment_required",
         verificationDetails: meta,
       },
     });

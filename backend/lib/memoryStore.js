@@ -84,6 +84,72 @@ module.exports = {
     return true;
   },
 
+  async findUserByDealerId(dealerId) {
+    return db.users.find((u) => u.dealerId === dealerId) || null;
+  },
+
+  // --- dealer packages ---
+  async createDealerPackage(data) {
+    const pkg = { id: nextId("pkg"), purchasedAt: new Date().toISOString(), ...data };
+    if (!db.dealerPackages) db.dealerPackages = [];
+    db.dealerPackages.push(pkg);
+    return pkg;
+  },
+  async listDealerPackages(dealerId) {
+    if (!db.dealerPackages) db.dealerPackages = [];
+    return db.dealerPackages.filter((p) => p.dealerId === dealerId);
+  },
+
+  // --- coupons ---
+  async listCoupons() {
+    if (!db.coupons) db.coupons = [];
+    return [...db.coupons].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  },
+  async findCouponById(id) {
+    if (!db.coupons) db.coupons = [];
+    return db.coupons.find((c) => c.id === id) || null;
+  },
+  async findCouponByCode(code) {
+    if (!db.coupons) db.coupons = [];
+    const upper = String(code || "").toUpperCase();
+    return db.coupons.find((c) => c.code === upper) || null;
+  },
+  async createCoupon(data) {
+    if (!db.coupons) db.coupons = [];
+    const coupon = {
+      id: nextId("cp"),
+      createdAt: new Date().toISOString(),
+      usedCount: 0,
+      usedByDealerId: null,
+      ...data,
+      code: String(data.code || "").toUpperCase(),
+    };
+    db.coupons.push(coupon);
+    return coupon;
+  },
+  async updateCoupon(id, patch) {
+    if (!db.coupons) db.coupons = [];
+    const coupon = db.coupons.find((c) => c.id === id);
+    if (!coupon) return null;
+    Object.assign(coupon, patch);
+    return coupon;
+  },
+  async deleteCoupon(id) {
+    if (!db.coupons) db.coupons = [];
+    const idx = db.coupons.findIndex((c) => c.id === id);
+    if (idx === -1) return false;
+    db.coupons.splice(idx, 1);
+    return true;
+  },
+  async markCouponUsed(couponId, dealerId) {
+    if (!db.coupons) db.coupons = [];
+    const coupon = db.coupons.find((c) => c.id === couponId);
+    if (!coupon) return null;
+    coupon.usedCount = (coupon.usedCount || 0) + 1;
+    coupon.usedByDealerId = dealerId;
+    return coupon;
+  },
+
   async findVehicleById(id) {
     return db.vehicles.find((v) => v.id === id) || null;
   },
@@ -142,8 +208,9 @@ module.exports = {
   async approveVehicle(id, adminUserId) {
     const vehicle = db.vehicles.find((v) => v.id === id);
     if (!vehicle) return null;
-    vehicle.approvalStatus = "Approved";
-    vehicle.status = "active";
+    vehicle.approvalStatus = "Approved — Payment Required";
+    vehicle.listingStatus = "approved_payment_required";
+    vehicle.status = "draft"; // stays hidden until dealer pays / uses credit
     vehicle.rejectionReason = null;
     vehicle.approvedAt = new Date().toISOString();
     vehicle.approvedBy = adminUserId || "admin";
@@ -153,7 +220,8 @@ module.exports = {
     const vehicle = db.vehicles.find((v) => v.id === id);
     if (!vehicle) return null;
     vehicle.approvalStatus = "Rejected";
-    vehicle.status = "rejected";
+    vehicle.listingStatus = "rejected";
+    vehicle.status = "draft";
     vehicle.rejectionReason = reason || "Declined by admin";
     vehicle.approvedAt = null;
     vehicle.approvedBy = adminUserId || "admin";

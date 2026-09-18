@@ -112,9 +112,9 @@ export default function MicrositeView({ site, dealer, vehicles = [], reviews = [
       {/* Powered-by footer */}
       <footer className="border-t border-gray-100 py-6 text-center text-xs text-gray-400">
         {preview ? (
-          <span>Powered by TrustDrive</span>
+          <span>Powered by TrustDrive India</span>
         ) : (
-          <Link to="/" className="hover:underline">Powered by TrustDrive — verified used cars</Link>
+          <Link to="/" className="hover:underline">Powered by TrustDrive India — verified used cars</Link>
         )}
       </footer>
     </div>

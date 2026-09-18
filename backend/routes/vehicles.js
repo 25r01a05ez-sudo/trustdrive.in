@@ -62,6 +62,7 @@ router.get("/audit-logs", requireAuth, requireRole("admin"), async (req, res) =>
 // GET /api/vehicles/:id
 // Non-admin / Public can only view approved active vehicles.
 // Masking and privacy rules strictly enforced server-side.
+// inspectionVideoUrl is ALWAYS stripped for non-admin callers.
 router.get("/:id", optionalAuth, async (req, res) => {
   try {
     const vehicle = await store.findVehicleById(req.params.id);
@@ -72,13 +73,16 @@ router.get("/:id", optionalAuth, async (req, res) => {
 
     // If vehicle is pending or rejected, only Admin or Owning Dealer can view it
     if (!isAdmin && !isOwner) {
-      if (vehicle.status !== "active" || vehicle.approvalStatus !== "Approved") {
-        return res.status(404).json({ error: "Vehicle not found or pending approval" });
+      if (vehicle.listingStatus !== "active" || vehicle.status !== "active") {
+        return res.status(404).json({ error: "Vehicle not found or not yet listed" });
       }
     }
 
     const dealer = await store.findDealerById(vehicle.dealerId);
-    res.json({ vehicle: sanitizeVehicle(vehicle, req.user), dealer });
+    const sanitized = sanitizeVehicle(vehicle, req.user);
+    // Strip inspection video from all non-admin responses (server-enforced privacy)
+    if (!isAdmin) delete sanitized.inspectionVideoUrl;
+    res.json({ vehicle: sanitized, dealer });
   } catch (err) {
     console.error("[GET /api/vehicles/:id error]", err);
     res.status(500).json({ error: err.message });
@@ -94,11 +98,18 @@ router.post("/", requireAuth, requireRole("dealer"), async (req, res) => {
 
     const existingDealer = await store.findDealerById(dealerId);
     if (!existingDealer) {
-      return res.status(400).json({ error: "Associated dealership not found in the database. Please complete dealer registration first." });
+      return res.status(400).json({ error: "Associated dealership not found. Please complete dealer registration first." });
+    }
+
+    // Only verified/approved dealers can submit vehicles
+    if (existingDealer.verificationStatus !== "verified") {
+      return res.status(403).json({
+        error: "Your dealership must be approved by an admin before you can list vehicles.",
+      });
     }
 
     const body = req.body || {};
-    const required = ["brand", "model", "year", "price", "chassisNumber", "registrationNumber"];
+    const required = ["brand", "model", "year", "price", "chassisNumber", "registrationNumber", "inspectionVideoUrl"];
     const missing = required.filter((f) => !body[f]);
     if (missing.length) return res.status(400).json({ error: `Missing fields: ${missing.join(", ")}` });
 
@@ -110,7 +121,7 @@ router.post("/", requireAuth, requireRole("dealer"), async (req, res) => {
     if (duplicate) {
       const matchType = String(duplicate.registrationNumber).toUpperCase() === cleanReg ? "Registration Number" : "Chassis Number";
       return res.status(409).json({
-        error: `A vehicle with this ${matchType} (${matchType === "Registration Number" ? cleanReg : cleanChassis}) is already registered on TrustDrive.`,
+        error: `A vehicle with this ${matchType} (${matchType === "Registration Number" ? cleanReg : cleanChassis}) is already registered on TrustDrive India.`,
       });
     }
 
@@ -128,9 +139,12 @@ router.post("/", requireAuth, requireRole("dealer"), async (req, res) => {
       registrationNumber: cleanReg,
       images: body.images || [],
       description: body.description || "",
+      // Inspection video — stored server-side, ONLY visible to admins
+      inspectionVideoUrl: body.inspectionVideoUrl || null,
       // Strict Gated Lifecycle
       approvalStatus: "Pending Admin Approval",
-      status: "pending",
+      listingStatus: "pending_review",
+      status: "draft",
       rejectionReason: null,
       submittedAt: new Date().toISOString(),
     });
@@ -141,18 +155,16 @@ router.post("/", requireAuth, requireRole("dealer"), async (req, res) => {
       action: "vehicle_registered",
       vehicleId: vehicle.id,
       dealerId,
-      details: {
-        brand: vehicle.brand,
-        model: vehicle.model,
-        year: vehicle.year,
-        price: vehicle.price,
-      },
+      details: { brand: vehicle.brand, model: vehicle.model, year: vehicle.year, price: vehicle.price },
     });
 
-    // Return sanitized vehicle so dealer never sees unmasked raw record in response
+    // Strip inspectionVideoUrl from dealer's own response
+    const sanitized = sanitizeVehicle(vehicle, req.user);
+    delete sanitized.inspectionVideoUrl;
+
     res.status(201).json({
-      vehicle: sanitizeVehicle(vehicle, req.user),
-      message: "Vehicle registered successfully. It is now Pending Admin Approval.",
+      vehicle: sanitized,
+      message: "Vehicle submitted for admin inspection. It will be reviewed before going live.",
     });
   } catch (err) {
     console.error("[POST /api/vehicles error]", err);
@@ -169,8 +181,8 @@ router.post("/:id/approve", requireAuth, requireRole("admin"), async (req, res) 
     const approved = await store.approveVehicle(vehicle.id, req.user.id);
     const dealer = await store.findDealerById(vehicle.dealerId);
 
-    // Automated WhatsApp alert to dealer
-    notifyDealerOnVehicleDecision(dealer, approved, "Approved").catch((e) =>
+    // Notify dealer that their listing is approved and payment is required
+    notifyDealerOnVehicleDecision(dealer, approved, "Approved — Payment Required").catch((e) =>
       console.error("[whatsapp alert error]", e.message)
     );
 
@@ -183,7 +195,7 @@ router.post("/:id/approve", requireAuth, requireRole("admin"), async (req, res) 
       details: { approvedAt: approved?.approvedAt },
     });
 
-    res.json({ vehicle: approved, message: "Vehicle approved and active." });
+    res.json({ vehicle: approved, message: "Vehicle approved. Dealer must now complete payment to activate the listing." });
   } catch (err) {
     console.error("[POST /api/vehicles/:id/approve error]", err);
     res.status(500).json({ error: err.message });

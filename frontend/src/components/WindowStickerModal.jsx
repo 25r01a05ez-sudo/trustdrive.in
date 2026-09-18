@@ -70,7 +70,7 @@ export default function WindowStickerModal({ vehicle, dealer, onClose }) {
               <div className="text-right">
                 <div className="inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-900">
                   <span>🛡️</span>
-                  <span>TrustDrive Certified</span>
+                  <span>TrustDrive India Certified</span>
                 </div>
               </div>
             </div>
@@ -156,7 +156,7 @@ export default function WindowStickerModal({ vehicle, dealer, onClose }) {
 
             {/* Footer stamp */}
             <div className="mt-4 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-              <span>Powered by TrustDrive Automotive Network</span>
+              <span>Powered by TrustDrive India Automotive Network</span>
               <span>Listing ID: #{vehicle.id?.slice(-8).toUpperCase()}</span>
             </div>
           </div>

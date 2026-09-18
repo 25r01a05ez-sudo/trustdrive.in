@@ -17,7 +17,7 @@ export default function Reviews() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
       <h1 className="font-display text-3xl font-semibold text-ink">Customer reviews</h1>
-      <p className="mt-2 text-sm text-muted">What buyers say after working with dealers on TrustDrive.</p>
+      <p className="mt-2 text-sm text-muted">What buyers say after working with dealers on TrustDrive India.</p>
 
       {avg && (
         <div className="mt-6 flex items-center gap-3 rounded-2xl border hairline bg-white p-5">

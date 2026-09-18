@@ -80,4 +80,19 @@ export const api = {
   publishSite: (token) => request("/dealer-sites/publish", { method: "POST", token }),
   unpublishSite: (token) => request("/dealer-sites/unpublish", { method: "POST", token }),
   getSiteBySubdomain: (subdomain) => request(`/dealer-sites/by-subdomain/${subdomain}`),
+
+  // payments & listing lifecycle
+  activateListing: (vehicleId, payload, token) => request(`/payments/activate-listing/${vehicleId}`, { method: "POST", body: payload, token }),
+  renewListing: (vehicleId, payload, token) => request(`/payments/renew/${vehicleId}`, { method: "POST", body: payload, token }),
+  purchasePackage: (payload, token) => request("/payments/purchase-package", { method: "POST", body: payload, token }),
+  getPackages: () => request("/payments/packages"),
+  runExpiryCheck: (token) => request("/payments/run-expiry-check", { method: "POST", token }),
+
+  // coupons
+  validateCoupon: (code, token) => request("/coupons/validate", { method: "POST", body: { code }, token }),
+  listCoupons: (token) => request("/coupons", { token }),
+  createCoupon: (payload, token) => request("/coupons", { method: "POST", body: payload, token }),
+  updateCoupon: (id, payload, token) => request(`/coupons/${id}`, { method: "PATCH", body: payload, token }),
+  deleteCoupon: (id, token) => request(`/coupons/${id}`, { method: "DELETE", token }),
 };
+

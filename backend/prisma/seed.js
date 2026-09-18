@@ -32,6 +32,8 @@ async function main() {
       whatsapp: "+919876500002",
       rating: 4.6,
       reviewCount: 128,
+      freeCreditsTotal: 5,
+      freeCreditsUsed: 2,
     },
   });
 
@@ -104,6 +106,21 @@ async function main() {
     ],
     skipDuplicates: true,
   });
+
+  // Demo coupon
+  const existingCoupon = await prisma.coupon.findUnique({ where: { code: "FIRST500" } });
+  if (!existingCoupon) {
+    await prisma.coupon.create({
+      data: {
+        code: "FIRST500",
+        discountType: "fixed",
+        discountValue: 500,
+        active: true,
+        usageLimit: 10,
+        usedCount: 0,
+      },
+    });
+  }
 
   console.log("Seed complete.");
 }

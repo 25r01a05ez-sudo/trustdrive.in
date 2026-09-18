@@ -45,7 +45,7 @@ export default function Footer() {
       </div>
       <div className="border-t hairline py-4">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 text-xs text-muted sm:flex-row">
-          <span>© {new Date().getFullYear()} TrustDrive. Demo build.</span>
+          <span>© {new Date().getFullYear()} TrustDrive India. Demo build.</span>
           <div className="flex gap-4">
             <Link to="/privacy" className="focus-ring hover:text-primary">Privacy Policy</Link>
             <Link to="/terms" className="focus-ring hover:text-primary">Terms</Link>

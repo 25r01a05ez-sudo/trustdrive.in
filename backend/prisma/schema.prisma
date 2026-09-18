@@ -1,6 +1,6 @@
-// TrustDrive — Prisma schema
+// TrustDrive India â€” Prisma schema
 // Maps directly to the "Database Layer" box in the architecture diagram.
-// Works with any Postgres, including Supabase — see the README's "Using
+// Works with any Postgres, including Supabase â€” see the README's "Using
 // Supabase" section for the two connection strings this schema expects
 // (DATABASE_URL for the app, DIRECT_URL for migrations).
 
@@ -72,15 +72,22 @@ model User {
 model Dealer {
   id                 String             @id @default(cuid())
   name               String
-  gstNumber          String             @unique
+  // GST is now OPTIONAL â€” not every second-hand dealer has GST registration
+  gstNumber          String?
+  // PAN Card number â€” mandatory for registration
+  panNumber          String?
+  // Udyam Registration Certificate number â€” mandatory for registration
+  udyamNumber        String?
   city               String
   address            String?
   verificationStatus VerificationStatus @default(pending)
+  // Rejection reason set by admin when rejecting a dealer application
+  rejectionReason    String?
   verifiedAt         DateTime?
   kycDocs            String[]           @default([])
   // Full multi-step dealer-verification wizard payload (business info,
   // owner details, document metadata/previews, bank details, photos,
-  // declarations). SENSITIVE — contains PAN/Aadhaar/bank details. Never
+  // declarations). SENSITIVE â€” contains PAN/Aadhaar/bank details. Never
   // returned from public dealer endpoints; only from admin-only routes.
   // See backend/routes/dealers.js.
   verification       Json?
@@ -89,13 +96,27 @@ model Dealer {
   whatsapp           String?
   rating             Float              @default(0)
   reviewCount        Int                @default(0)
+
+  // --- Listing Credits ---
+  // Every dealer gets 5 free approved listings. Once exhausted, they need
+  // to purchase a package or pay Rs 1999 per listing individually.
+  freeCreditsTotal    Int @default(5)
+  freeCreditsUsed     Int @default(0)
+  // Credits from purchased packages (Basic/Growth/Pro)
+  packageCreditsTotal Int @default(0)
+  packageCreditsUsed  Int @default(0)
+  // Name of the currently active/last package purchased
+  currentPackage      String?
+
   createdAt          DateTime           @default(now())
 
-  users    User[]
-  vehicles Vehicle[]
-  leads    Lead[]
-  reviews  Review[]
-  site     DealerSite?
+  users       User[]
+  vehicles    Vehicle[]
+  leads       Lead[]
+  reviews     Review[]
+  site        DealerSite?
+  packages    DealerPackage[]
+  couponsUsed Coupon[] @relation("CouponUsedBy")
 
   @@index([city])
   @@index([verificationStatus])
@@ -114,10 +135,10 @@ model DealerSite {
   published    Boolean  @default(false)
   lastPrompt   String?
   theme        Json     // { primaryColor, accentColor, font }
-  hero         Json      // { headline, subheadline }
-  about        Json      // { heading, body }
+  hero         Json     // { headline, subheadline }
+  about        Json     // { heading, body }
   highlights   Json     // [{ title, body }]
-  contact      Json      // { ctaText }
+  contact      Json     // { ctaText }
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -141,7 +162,7 @@ model Vehicle {
   rcVerified           Boolean                    @default(false)
   verificationStatus   VehicleVerificationStatus  @default(pending)
   // Full VAHAN-style RC lookup result (registration status, engine number,
-  // insurance, PUC, financier/hypothecation, RTO, etc.) — see
+  // insurance, PUC, financier/hypothecation, RTO, etc.) â€” see
   // backend/lib/rcVerification.js.
   verificationDetails  Json?
   images               String[]                   @default([])
@@ -149,12 +170,73 @@ model Vehicle {
   status               VehicleStatus              @default(active)
   listedAt             DateTime                   @default(now())
 
+  // --- Inspection Video (Admin-only, NEVER exposed publicly) ---
+  // Supabase Storage public URL of the uploaded inspection video.
+  // Server-side: stripped from ALL non-admin API responses.
+  inspectionVideoUrl   String?
+
+  // --- Listing Lifecycle & Payment ---
+  // listingStatus tracks the full gated lifecycle:
+  //   pending_review â†’ approved_payment_required â†’ active â†’ expired
+  //   (or) rejected
+  listingStatus        String    @default("pending_review")
+  // Payment method used to activate this listing:
+  // "unpaid" | "free_credit" | "package_credit" | "paid_individual"
+  paymentStatus        String    @default("unpaid")
+  // When the listing was activated (payment completed or credit deducted)
+  listingActivatedAt   DateTime?
+  // 3 months after activation; listing becomes expired after this date
+  listingExpiresAt     DateTime?
+  // Whether the 3-day-before-expiry reminder email has been sent (avoid duplicates)
+  renewalReminderSent  Boolean   @default(false)
+
   leads Lead[]
 
   @@index([dealerId])
   @@index([brand, model])
   @@index([status])
   @@index([verificationStatus])
+  @@index([listingStatus])
+  @@index([listingExpiresAt])
+}
+
+// Discount coupons â€” Admin creates, dealers use at payment time
+model Coupon {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  // "percent" = percentage off (e.g. 20 means 20% off)
+  // "fixed"   = fixed Rs discount (e.g. 500 means Rs 500 off)
+  discountType  String
+  discountValue Float
+  // When the coupon expires (null = no expiry date)
+  expiresAt     DateTime?
+  active        Boolean   @default(true)
+  // Total usage limit (default 1 = one-time use only)
+  usageLimit    Int       @default(1)
+  usedCount     Int       @default(0)
+  // Which dealer used it (for audit; enforces one-use on backend)
+  usedByDealerId String?
+  usedByDealer  Dealer?   @relation("CouponUsedBy", fields: [usedByDealerId], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+
+  @@index([code])
+  @@index([active])
+}
+
+// Records of package purchases by dealers
+model DealerPackage {
+  id          String   @id @default(cuid())
+  dealerId    String
+  dealer      Dealer   @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+  // "starter" (5 free) | "basic" (10, Rs19000) | "growth" (20, Rs39000) | "pro" (50, Rs99000)
+  packageName String
+  // How many listing credits this package provides
+  credits     Int
+  // Amount paid in Rs (0 for free/simulated)
+  amountPaid  Int
+  purchasedAt DateTime @default(now())
+
+  @@index([dealerId])
 }
 
 model Lead {

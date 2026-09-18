@@ -17,7 +17,7 @@ export default function MicrositeApp({ subdomain }) {
         <h1 className="mt-2 font-display text-2xl font-semibold text-ink">This site isn't available.</h1>
         <p className="mt-2 text-sm text-muted">It may not be published yet, or the dealer isn't verified.</p>
         <a href="/" className="focus-ring mt-6 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-paper">
-          Go to TrustDrive
+          Go to TrustDrive India
         </a>
       </div>
     );

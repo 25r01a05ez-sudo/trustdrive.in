@@ -59,18 +59,30 @@ function publicDealer(dealer) {
   return rest;
 }
 
-// POST /api/dealers/register  { name, gstNumber, city, address, verification }
+// POST /api/dealers/register  { name, city, address, panNumber, udyamNumber, gstNumber (optional), verification }
 router.post("/register", requireAuth, requireRole("dealer"), async (req, res) => {
-  const { name, gstNumber, city, address, verification } = req.body || {};
-  if (!name || !gstNumber || !city) {
-    return res.status(400).json({ error: "name, gstNumber and city are required" });
+  const { name, city, address, verification, panNumber, udyamNumber, gstNumber } = req.body || {};
+  if (!name || !city) {
+    return res.status(400).json({ error: "name and city are required" });
+  }
+  // PAN Card is mandatory
+  const cleanPan = (panNumber || verification?.panNumber || "").trim().toUpperCase();
+  if (!cleanPan) {
+    return res.status(400).json({ error: "PAN Card number is required" });
+  }
+  // Udyam Registration Certificate is mandatory
+  const cleanUdyam = (udyamNumber || verification?.udyamNumber || "").trim().toUpperCase();
+  if (!cleanUdyam) {
+    return res.status(400).json({ error: "Udyam Registration Certificate number is required" });
   }
 
   const kycDocs = extractDocumentList(verification);
 
   const dealer = await store.createDealer({
     name,
-    gstNumber,
+    gstNumber: gstNumber ? gstNumber.trim().toUpperCase() : null, // optional
+    panNumber: cleanPan,
+    udyamNumber: cleanUdyam,
     city,
     address: address || "",
     whatsapp: (req.body.whatsapp || verification?.ownerMobile || req.user.phone || "").trim(),
@@ -84,18 +96,19 @@ router.post("/register", requireAuth, requireRole("dealer"), async (req, res) =>
     : "-";
 
   const text = [
-    "New TrustDrive dealer registration -- please verify manually:",
+    "New TrustDrive India dealer registration -- please verify manually:",
     "",
     `Dealership: ${name}`,
-    `GSTIN: ${gstNumber}`,
-    verification?.panNumber ? `PAN: ${verification.panNumber}` : null,
+    `PAN: ${cleanPan}`,
+    `Udyam: ${cleanUdyam}`,
+    gstNumber ? `GSTIN: ${gstNumber.trim().toUpperCase()}` : null,
     `City: ${city}`,
     `Address: ${address || "-"}`,
     `Owner: ${owner}`,
     "",
     `Documents provided (${kycDocs.length}): ${kycDocs.length ? kycDocs.join(", ") : "none"}`,
     "",
-    "Please ask them to send the original files here for manual review, then approve/reject from the admin dashboard.",
+    "Please review the PAN Card and Udyam Certificate, then approve/reject from the admin dashboard.",
   ].filter(Boolean).join("\n");
 
   const { waLink } = await notifyAdminOnWhatsApp(text);
@@ -116,12 +129,13 @@ router.patch("/:id", requireAuth, requireRole("dealer", "admin"), async (req, re
 
   const patch = {};
   if (req.user.role === "admin") {
-    const editable = ["name", "city", "address", "whatsapp", "gstNumber", "verificationStatus"];
+    const editable = ["name", "city", "address", "whatsapp", "gstNumber", "panNumber", "udyamNumber", "verificationStatus", "rejectionReason"];
     editable.forEach((f) => {
       if (req.body[f] !== undefined) patch[f] = req.body[f];
     });
     if (patch.verificationStatus === "verified" && dealer.verificationStatus !== "verified") {
       patch.verifiedAt = new Date().toISOString();
+      patch.rejectionReason = null; // clear any previous rejection reason
     }
     // Same data-retention rule as the dedicated approve/reject endpoint:
     // purge encrypted KYC data as soon as a dealer is marked rejected.

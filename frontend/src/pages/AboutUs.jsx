@@ -1,7 +1,7 @@
 export default function AboutUs() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
-      <p className="font-mono text-xs uppercase tracking-[0.2em] text-gold-dark">About TrustDrive</p>
+      <p className="font-mono text-xs uppercase tracking-[0.2em] text-gold-dark">About TrustDrive India</p>
       <h1 className="mt-3 font-display text-4xl font-semibold leading-tight text-ink">
         Buying a used car shouldn't mean betting on paperwork.
       </h1>
@@ -14,7 +14,7 @@ export default function AboutUs() {
           it doesn't, the buyer is the one who finds out at the RTO.
         </p>
         <p>
-          TrustDrive exists to move that trust earlier in the process. Every dealer goes through GST and
+          TrustDrive India exists to move that trust earlier in the process. Every dealer goes through GST and
           KYC verification before they can list a single car. Every listing's registration and chassis
           number are checked against VAHAN, the government's own vehicle registry, before it's shown to
           a buyer. If either check fails, the listing simply doesn't go live — no exceptions, no

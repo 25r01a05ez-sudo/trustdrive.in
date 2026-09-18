@@ -18,7 +18,7 @@ export default function VehicleCard({ vehicle }) {
   const waMessage = encodeURIComponent(
     `Hi ${dealer.name || "Dealer"}, I saw the ${vehicle.year} ${vehicle.brand} ${vehicle.model} (₹${formatINR(
       vehicle.price
-    )}) on TrustDrive. Is it still available for a test drive?`
+    )}) on TrustDrive India. Is it still available for a test drive?`
   );
   const waUrl = waNumber ? `https://wa.me/${waNumber}?text=${waMessage}` : null;
 

@@ -9,7 +9,7 @@ export default function Terms() {
         <section>
           <h2 className="font-display text-lg font-semibold text-ink">What verification means</h2>
           <p className="mt-2 text-muted">
-            A "verified" badge on TrustDrive means a dealer has submitted GST registration, PAN, and
+            A "verified" badge on TrustDrive India means a dealer has submitted GST registration, PAN, and
             supporting business documents, and our team has reviewed them manually. It confirms the
             dealership exists and its registration documents check out — it is not a guarantee about the
             condition, history, or legal status of any specific vehicle, which is checked separately
