@@ -90,6 +90,7 @@ export const api = {
 
   // coupons
   validateCoupon: (code, token) => request("/coupons/validate", { method: "POST", body: { code }, token }),
+  redeemCoupon: (payload, token) => request("/coupons/redeem", { method: "POST", body: payload, token }),
   listCoupons: (token) => request("/coupons", { token }),
   createCoupon: (payload, token) => request("/coupons", { method: "POST", body: payload, token }),
   updateCoupon: (id, payload, token) => request(`/coupons/${id}`, { method: "PATCH", body: payload, token }),

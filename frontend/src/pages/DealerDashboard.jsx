@@ -65,6 +65,55 @@ export default function DealerDashboard() {
   const [activating, setActivating] = useState(false);
   const INDIVIDUAL_PRICE = 1999;
 
+  // Direct Coupon Redeem Modal State
+  const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
+  const [directRedeemCode, setDirectRedeemCode] = useState("");
+  const [directRedeemChecking, setDirectRedeemChecking] = useState(false);
+  const [directRedeemValidation, setDirectRedeemValidation] = useState(null);
+  const [directRedeemSubmitting, setDirectRedeemSubmitting] = useState(false);
+  const [directRedeemVehicleId, setDirectRedeemVehicleId] = useState("");
+
+  const handleVerifyDirectCoupon = async () => {
+    if (!directRedeemCode.trim()) return;
+    setDirectRedeemChecking(true);
+    setDirectRedeemValidation(null);
+    try {
+      const token = await getToken();
+      const res = await api.validateCoupon(directRedeemCode.trim().toUpperCase(), token);
+      setDirectRedeemValidation(res);
+    } catch (err) {
+      setDirectRedeemValidation({ valid: false, error: err.message });
+    } finally {
+      setDirectRedeemChecking(false);
+    }
+  };
+
+  const handleRedeemDirectCoupon = async (e) => {
+    if (e) e.preventDefault();
+    if (!directRedeemCode.trim()) return;
+    setDirectRedeemSubmitting(true);
+    setSubmitError("");
+    try {
+      const token = await getToken();
+      const payload = {
+        code: directRedeemCode.trim().toUpperCase(),
+        vehicleId: directRedeemVehicleId || undefined,
+      };
+      const res = await api.redeemCoupon(payload, token);
+      setMessage(res.message || "Coupon redeemed successfully!");
+      if (res.dealer) setDealerInfo(res.dealer);
+      setIsRedeemModalOpen(false);
+      setDirectRedeemCode("");
+      setDirectRedeemValidation(null);
+      setDirectRedeemVehicleId("");
+      refresh();
+    } catch (err) {
+      setSubmitError(err.message || "Failed to redeem coupon.");
+    } finally {
+      setDirectRedeemSubmitting(false);
+    }
+  };
+
   const toggleSpotlight = async (v) => {
     try {
       const token = await getToken();
@@ -312,17 +361,26 @@ export default function DealerDashboard() {
             Manage your inventory, submit vehicles for admin approval, and track buyer leads.
           </p>
         </div>
-        <Link
-          to="/dealer/website"
-          className="focus-ring rounded-full border hairline px-4 py-2 text-sm font-medium text-ink hover:border-primary hover:text-primary"
-        >
-          Build my website →
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsRedeemModalOpen(true)}
+            className="focus-ring rounded-full bg-gold/15 border border-gold/40 px-4 py-2 text-sm font-semibold text-gold-dark hover:bg-gold/25 transition-all flex items-center gap-1.5 shadow-xs"
+          >
+            <span>🎟️</span> Redeem Coupon
+          </button>
+          <Link
+            to="/dealer/website"
+            className="focus-ring rounded-full border hairline px-4 py-2 text-sm font-medium text-ink hover:border-primary hover:text-primary"
+          >
+            Build my website →
+          </Link>
+        </div>
       </div>
 
       {/* Verification status + Credits bar */}
       {dealerInfo && (
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-wrap gap-3 items-center">
           {dealerInfo.verificationStatus === "verified" ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
               <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
@@ -348,6 +406,13 @@ export default function DealerDashboard() {
               ({freeRemaining} free · {packageRemaining} package)
             </span>
           </span>
+          <button
+            type="button"
+            onClick={() => setIsRedeemModalOpen(true)}
+            className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100 transition-colors focus-ring cursor-pointer"
+          >
+            <span>🎟️ Have a coupon code? Redeem here</span>
+          </button>
         </div>
       )}
 
@@ -980,6 +1045,151 @@ export default function DealerDashboard() {
                   : "Activate Listing →"
               )}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* DIRECT REDEEM COUPON MODAL */}
+      {isRedeemModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 backdrop-blur-sm px-4"
+          onClick={() => setIsRedeemModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl space-y-5 border hairline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between border-b hairline pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-display text-xl font-bold text-ink">Redeem Dealer Coupon</h3>
+                  <span className="rounded-full bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-bold text-amber-900 uppercase">
+                    Dealer Exclusive
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-muted">
+                  Enter an admin-issued promotional voucher code to add listing credits or activate your vehicle listings.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsRedeemModalOpen(false)}
+                className="text-muted hover:text-ink text-sm font-bold p-1 focus-ring rounded"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleRedeemDirectCoupon} className="space-y-4">
+              {/* Code Entry & Verify Button */}
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted block mb-1.5">
+                  Coupon Voucher Code
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter coupon code (e.g. DEALER20)"
+                    value={directRedeemCode}
+                    onChange={(e) => {
+                      setDirectRedeemCode(e.target.value.toUpperCase());
+                      setDirectRedeemValidation(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleVerifyDirectCoupon();
+                      }
+                    }}
+                    className="focus-ring flex-1 rounded-xl border hairline p-3 font-mono text-base font-bold uppercase tracking-wider text-ink bg-paper/40"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleVerifyDirectCoupon}
+                    disabled={directRedeemChecking || !directRedeemCode.trim()}
+                    className="focus-ring rounded-xl bg-primary px-4 py-3 text-xs font-semibold text-paper hover:bg-primary-light disabled:opacity-50 transition-colors"
+                  >
+                    {directRedeemChecking ? "Verifying…" : "Verify Code"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Verification Feedback / Luxury Voucher Card */}
+              {directRedeemValidation && (
+                <div className="space-y-3">
+                  {directRedeemValidation.valid ? (
+                    <div className="rounded-2xl border-2 border-[#C5A059] bg-[#142B21] text-white p-4 shadow-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-gold tracking-wide">✓ Verified Coupon Code</span>
+                        <span className="rounded-full bg-gold/20 border border-gold/40 px-2 py-0.5 text-[9px] font-bold text-gold uppercase">
+                          {directRedeemValidation.coupon.discountType === "percent"
+                            ? `${directRedeemValidation.coupon.discountValue}% OFF`
+                            : `₹${formatINR(directRedeemValidation.coupon.discountValue)} OFF`}
+                        </span>
+                      </div>
+                      <div className="flex items-baseline justify-between">
+                        <span className="font-mono text-xl font-bold text-gold tracking-wider">
+                          {directRedeemValidation.coupon.code}
+                        </span>
+                        <span className="text-xs text-emerald-300 font-semibold">
+                          Saves ₹{formatINR(directRedeemValidation.discount)} on ₹1,999 listing
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs font-semibold text-red-800 flex items-center gap-2">
+                      <span>✕</span>
+                      <span>{directRedeemValidation.error}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Optional Vehicle Target Selector (if dealer has vehicles awaiting payment) */}
+              {(() => {
+                const awaitingVehicles = vehicles.filter((v) => v.listingStatus === "approved_payment_required");
+                if (awaitingVehicles.length === 0) return null;
+
+                return (
+                  <div className="pt-2 border-t hairline">
+                    <label className="text-xs font-semibold text-ink block mb-1">
+                      Apply Directly to Activate Vehicle (Optional):
+                    </label>
+                    <select
+                      value={directRedeemVehicleId}
+                      onChange={(e) => setDirectRedeemVehicleId(e.target.value)}
+                      className="focus-ring w-full rounded-xl border hairline p-2.5 text-xs text-ink bg-white"
+                    >
+                      <option value="">-- Redeem as 1 Listing Credit to Account Balance --</option>
+                      {awaitingVehicles.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          Activate listing: {v.brand} {v.model} ({v.year})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })()}
+
+              {/* Modal Buttons */}
+              <div className="flex gap-2 pt-2 border-t hairline">
+                <button
+                  type="button"
+                  onClick={() => setIsRedeemModalOpen(false)}
+                  className="focus-ring flex-1 rounded-xl border hairline py-2.5 text-xs font-semibold text-ink hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={directRedeemSubmitting || !directRedeemCode.trim()}
+                  className="focus-ring flex-1 rounded-xl bg-primary py-2.5 text-xs font-semibold text-paper hover:bg-primary-light shadow disabled:opacity-60 transition-all flex items-center justify-center gap-1.5"
+                >
+                  {directRedeemSubmitting ? "Redeeming…" : "🚀 Redeem Coupon"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

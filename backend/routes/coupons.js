@@ -168,4 +168,108 @@ router.post("/validate", requireAuth, requireRole("dealer"), async (req, res) =>
   }
 });
 
+/**
+ * POST /api/coupons/redeem  (dealer: redeem coupon directly)
+ *
+ * Body: { code: string, vehicleId?: string }
+ */
+router.post("/redeem", requireAuth, requireRole("dealer"), async (req, res) => {
+  try {
+    if (!req.user.dealerId) {
+      return res.status(403).json({ error: "Only registered dealership accounts can redeem coupons." });
+    }
+    const { code, vehicleId } = req.body || {};
+    if (!code || !code.trim()) {
+      return res.status(400).json({ error: "Coupon code is required." });
+    }
+
+    const cleanCode = code.trim().toUpperCase();
+    const coupon = await store.findCouponByCode(cleanCode);
+
+    if (!coupon) return res.status(404).json({ error: "Coupon code not found." });
+    if (!coupon.active) return res.status(400).json({ error: "This coupon is currently paused or inactive." });
+    if (coupon.usedCount >= coupon.usageLimit) {
+      return res.status(400).json({ error: "This coupon has reached its maximum usage limit." });
+    }
+    if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
+      return res.status(400).json({ error: "This coupon has expired." });
+    }
+
+    const dealer = await store.findDealerById(req.user.dealerId);
+    if (!dealer) return res.status(404).json({ error: "Dealer profile not found." });
+
+    const INDIVIDUAL_PRICE = 1999;
+    const discount =
+      coupon.discountType === "percent"
+        ? Math.round((INDIVIDUAL_PRICE * coupon.discountValue) / 100)
+        : Math.min(coupon.discountValue, INDIVIDUAL_PRICE);
+
+    // If vehicleId is provided, activate vehicle listing directly
+    if (vehicleId) {
+      const vehicle = await store.findVehicleById(vehicleId);
+      if (!vehicle) return res.status(404).json({ error: "Vehicle not found." });
+      if (vehicle.dealerId !== dealer.id) {
+        return res.status(403).json({ error: "You can only activate your own listings." });
+      }
+
+      const listingActivatedAt = new Date();
+      const listingExpiresAt = new Date();
+      listingExpiresAt.setMonth(listingExpiresAt.getMonth() + 3);
+
+      const updatedVehicle = await store.updateVehicle(vehicle.id, {
+        listingStatus: "active",
+        paymentStatus: coupon.discountType === "percent" && coupon.discountValue === 100 ? "free_credit" : "paid_individual",
+        listingActivatedAt,
+        listingExpiresAt,
+      });
+
+      await store.markCouponUsed(coupon.id, dealer.id);
+
+      await logAuditEvent({
+        userId: req.user.id,
+        userRole: req.user.role,
+        action: "vehicle_activated_via_coupon",
+        vehicleId: vehicle.id,
+        dealerId: dealer.id,
+        details: { couponCode: coupon.code, discount, finalPrice: Math.max(0, INDIVIDUAL_PRICE - discount) },
+      }).catch(() => {});
+
+      return res.json({
+        success: true,
+        message: `🎉 Listing "${vehicle.brand} ${vehicle.model}" activated using coupon ${coupon.code}!`,
+        vehicle: updatedVehicle,
+        dealer,
+      });
+    }
+
+    // Direct account redemption: Add listing credits to dealer account
+    const creditsToAdd = coupon.discountType === "percent" && coupon.discountValue === 100
+      ? 1
+      : Math.max(1, Math.floor(discount / 1000));
+
+    const updatedDealer = await store.updateDealer(dealer.id, {
+      packageCreditsTotal: (dealer.packageCreditsTotal || 0) + creditsToAdd,
+    });
+
+    await store.markCouponUsed(coupon.id, dealer.id);
+
+    await logAuditEvent({
+      userId: req.user.id,
+      userRole: req.user.role,
+      action: "coupon_redeemed_credits",
+      dealerId: dealer.id,
+      details: { couponCode: coupon.code, creditsAdded: creditsToAdd },
+    }).catch(() => {});
+
+    return res.json({
+      success: true,
+      message: `🎉 Coupon "${coupon.code}" redeemed! ${creditsToAdd} Listing Credit${creditsToAdd > 1 ? "s" : ""} added to your account balance.`,
+      creditsAdded: creditsToAdd,
+      dealer: updatedDealer,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
