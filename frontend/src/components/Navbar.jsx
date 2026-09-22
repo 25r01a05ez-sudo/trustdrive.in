@@ -23,11 +23,11 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b hairline bg-paper/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link to="/" className="flex items-center focus-ring rounded-lg transition-transform hover:opacity-95" onClick={closeMenu} aria-label="TrustDrive India">
+        <Link to="/" className="flex items-center focus-ring rounded-lg transition-transform hover:opacity-95" onClick={closeMenu} aria-label="TrustDrives India">
           <img
             src="/logo.png"
-            alt="TrustDrive India"
-            className="h-10 w-auto rounded-md shadow-sm"
+            alt="TrustDrives India"
+            className="h-10 w-auto object-contain mix-blend-multiply"
           />
         </Link>
 

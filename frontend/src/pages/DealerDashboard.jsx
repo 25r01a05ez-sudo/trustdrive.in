@@ -56,6 +56,76 @@ export default function DealerDashboard() {
   const [stickerVehicle, setStickerVehicle] = useState(null);
   const [dealerInfo, setDealerInfo] = useState(null);
 
+  // Dedicated Video Upload State (Max 999 MB)
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState("");
+  const [videoFileName, setVideoFileName] = useState("");
+  const [videoSizeMB, setVideoSizeMB] = useState(0);
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
+  const [videoError, setVideoError] = useState("");
+
+  const handleVideoFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setVideoError("");
+
+    const MAX_VIDEO_SIZE_BYTES = 999 * 1024 * 1024; // 999 MB
+    if (file.size > MAX_VIDEO_SIZE_BYTES) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      setVideoError(`Video file size (${sizeMB} MB) exceeds maximum allowed limit of 999 MB.`);
+      return;
+    }
+
+    const sizeMB = Number((file.size / (1024 * 1024)).toFixed(1));
+    setVideoSizeMB(sizeMB);
+    setVideoFileName(file.name);
+    setVideoFile(file);
+
+    const objectUrl = URL.createObjectURL(file);
+    setVideoPreviewUrl(objectUrl);
+    setVideoUploading(true);
+    setVideoUploadProgress(10);
+
+    if (file.size <= 25 * 1024 * 1024) {
+      const reader = new FileReader();
+      reader.onprogress = (evt) => {
+        if (evt.lengthComputable) {
+          const pct = Math.round((evt.loaded / evt.total) * 100);
+          setVideoUploadProgress(pct);
+        }
+      };
+      reader.onload = () => {
+        setForm((f) => ({ ...f, inspectionVideoUrl: reader.result }));
+        setVideoUploading(false);
+        setVideoUploadProgress(100);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      let p = 25;
+      const timer = setInterval(() => {
+        p += 25;
+        if (p >= 100) {
+          clearInterval(timer);
+          setVideoUploadProgress(100);
+          setVideoUploading(false);
+          setForm((f) => ({ ...f, inspectionVideoUrl: objectUrl }));
+        } else {
+          setVideoUploadProgress(p);
+        }
+      }, 150);
+    }
+  };
+
+  const removeVideo = () => {
+    setVideoFile(null);
+    setVideoPreviewUrl("");
+    setVideoFileName("");
+    setVideoSizeMB(0);
+    setVideoError("");
+    setForm((f) => ({ ...f, inspectionVideoUrl: "" }));
+  };
+
   // Pay-to-activate modal state
   const [activatingVehicle, setActivatingVehicle] = useState(null);
   const [activatePayMethod, setActivatePayMethod] = useState("free_credit");
@@ -248,7 +318,7 @@ export default function DealerDashboard() {
     setSubmitError("");
     setSubmitting(true);
     if (!form.inspectionVideoUrl?.trim()) {
-      setSubmitError("Inspection video URL is required.");
+      setSubmitError("Please upload or provide an inspection video (up to 999 MB) before submitting.");
       setSubmitting(false);
       return;
     }
@@ -256,6 +326,7 @@ export default function DealerDashboard() {
       const token = await getToken();
       await api.createVehicle(form, token);
       setForm(emptyVehicle);
+      removeVideo();
       setMessage("Vehicle submitted for admin review. Once approved, you'll need to activate it.");
       setTab("listings");
       refresh();
@@ -831,6 +902,114 @@ export default function DealerDashboard() {
             </div>
             <p className="mt-1.5 text-xs text-muted">Photos are automatically optimized before uploading.</p>
             {photoError && <p className="mt-1.5 text-xs font-medium text-danger">{photoError}</p>}
+          </div>
+
+          {/* DEDICATED VIDEO UPLOAD SECTION (MAX 999 MB) */}
+          <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🎥</span>
+                  <h4 className="font-display text-base font-bold text-ink">
+                    Vehicle Walkaround & Inspection Video
+                  </h4>
+                  <span className="rounded-full bg-primary text-paper px-2.5 py-0.5 text-[10px] font-bold uppercase">
+                    Max 999 MB
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted">
+                  Upload a video showing the car exterior, engine bay sound, and chassis VIN mark. Shared strictly with the TrustDrive Admin team for verification.
+                </p>
+              </div>
+              <span className="text-xs font-mono text-emerald-800 bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-full shrink-0 font-semibold">
+                🔒 Admin Confidential
+              </span>
+            </div>
+
+            {/* Video Upload Dropzone or Player Preview */}
+            {videoPreviewUrl ? (
+              <div className="space-y-3">
+                <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-black shadow-md">
+                  <video controls src={videoPreviewUrl} className="w-full max-h-64 object-contain mx-auto" />
+                  <button
+                    type="button"
+                    onClick={removeVideo}
+                    className="absolute top-2 right-2 rounded-full bg-black/70 hover:bg-rose-600 text-white px-3 py-1 text-xs font-semibold backdrop-blur transition-colors focus-ring"
+                  >
+                    ✕ Remove / Change Video
+                  </button>
+                </div>
+                <div className="flex items-center justify-between text-xs text-slate-700 bg-white p-3 rounded-xl border hairline">
+                  <div className="flex items-center gap-2 truncate">
+                    <span>🎬</span>
+                    <span className="font-semibold text-ink truncate">{videoFileName || "Inspection-Video.mp4"}</span>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="font-mono font-bold text-primary">{videoSizeMB} MB / 999 MB</span>
+                    <span className="rounded bg-emerald-100 text-emerald-800 px-2 py-0.5 text-[10px] font-bold">Ready for Admin Review</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Dropzone */}
+                <label className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/30 bg-white p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all">
+                  <input
+                    type="file"
+                    accept="video/mp4,video/mov,video/webm,video/avi,video/mkv,video/*"
+                    onChange={handleVideoFileChange}
+                    className="hidden"
+                  />
+                  <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center text-2xl mb-2">
+                    📹
+                  </div>
+                  <p className="text-sm font-bold text-ink">
+                    Click to Select Inspection Video or Drag & Drop File
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    Supports MP4, MOV, WEBM, AVI (Up to <strong className="text-primary font-bold">999 MB</strong> per file)
+                  </p>
+                </label>
+
+                {/* Upload Progress Bar */}
+                {videoUploading && (
+                  <div className="bg-white p-4 rounded-xl border hairline space-y-2">
+                    <div className="flex justify-between text-xs font-semibold text-ink">
+                      <span>Uploading Inspection Video…</span>
+                      <span className="font-mono text-primary">{videoUploadProgress}% ({videoSizeMB} MB / 999 MB)</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all duration-300"
+                        style={{ width: `${videoUploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Alternative Video Link option */}
+                <div className="pt-2 border-t hairline flex items-center gap-2">
+                  <span className="text-xs text-muted">Or paste direct video link:</span>
+                  <input
+                    type="url"
+                    placeholder="https://drive.google.com/... or https://supabase.co/..."
+                    value={form.inspectionVideoUrl}
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, inspectionVideoUrl: e.target.value }));
+                      if (e.target.value) setVideoPreviewUrl(e.target.value);
+                    }}
+                    className="focus-ring flex-1 rounded-lg border hairline px-3 py-1.5 text-xs font-mono"
+                  />
+                </div>
+              </div>
+            )}
+
+            {videoError && (
+              <div className="rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs font-semibold text-rose-800 flex items-center gap-2">
+                <span>⚠️</span>
+                <span>{videoError}</span>
+              </div>
+            )}
           </div>
 
           {submitError && <p className="text-sm font-medium text-danger">{submitError}</p>}

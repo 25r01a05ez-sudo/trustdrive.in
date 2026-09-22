@@ -9,8 +9,8 @@ export default function Footer() {
           <Link to="/" className="inline-block focus-ring rounded-lg mb-3">
             <img
               src="/logo.png"
-              alt="TrustDrive India"
-              className="h-10 w-auto rounded-md shadow-sm"
+              alt="TrustDrives India"
+              className="h-10 w-auto object-contain mix-blend-multiply"
             />
           </Link>
           <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.15em] text-gold-dark">

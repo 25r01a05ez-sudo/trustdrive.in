@@ -480,6 +480,26 @@ export default function AdminDashboard() {
                         </p>
                       </div>
 
+                      {v.inspectionVideoUrl && (
+                        <div className="pt-2 border-t hairline space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1">
+                              <span>🎥</span> Inspection Video
+                            </span>
+                            <span className="rounded bg-emerald-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-emerald-800">
+                              ADMIN ONLY
+                            </span>
+                          </div>
+                          {v.inspectionVideoUrl.startsWith("data:video") || v.inspectionVideoUrl.startsWith("blob:") || v.inspectionVideoUrl.endsWith(".mp4") || v.inspectionVideoUrl.endsWith(".mov") || v.inspectionVideoUrl.endsWith(".webm") ? (
+                            <video controls src={v.inspectionVideoUrl} className="w-full max-h-44 rounded-lg border border-slate-300 bg-black object-contain" />
+                          ) : (
+                            <a href={v.inspectionVideoUrl} target="_blank" rel="noreferrer" className="block p-2 text-xs font-mono text-blue-600 hover:underline bg-white rounded border hairline truncate">
+                              🔗 Open Inspection Video Link →
+                            </a>
+                          )}
+                        </div>
+                      )}
+
                       <div className="text-[11px] text-muted pt-1">
                         Submitted on: {new Date(v.submittedAt || v.listedAt).toLocaleString("en-IN")}
                       </div>
