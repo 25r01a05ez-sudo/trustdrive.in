@@ -3,10 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
 import DealerDocumentsViewer from "../components/DealerDocumentsViewer";
 import VehicleImage from "../components/VehicleImage";
-
-function formatINR(n) {
-  return new Intl.NumberFormat("en-IN").format(n || 0);
-}
+import { formatINR } from "../lib/formatters";
 
 const QUICK_REJECT_REASONS = [
   "Chassis number mismatch with VAHAN records",

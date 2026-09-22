@@ -33,46 +33,46 @@ export default function Listings() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-ink">
+      <div className="space-y-1.5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h1 className="font-display text-3xl font-bold leading-tight text-ink">
             {isSavedMode ? "❤️ Your Saved Cars" : "Browse Verified Cars"}
           </h1>
-          <p className="mt-1 text-sm text-muted">
-            {isSavedMode
-              ? `You have saved ${wishlistCount} car${wishlistCount === 1 ? "" : "s"} for easy comparison.`
-              : "Direct from verified dealers with VAHAN cross-checked records."}
-          </p>
-        </div>
 
-        {/* Tab switcher: All Cars vs Saved Cars */}
-        <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1">
-          <button
-            type="button"
-            onClick={() => {
-              const next = { ...params };
-              delete next.saved;
-              setSearchParams(next);
-            }}
-            className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
-              !isSavedMode ? "bg-white text-ink shadow-sm" : "text-muted hover:text-ink"
-            }`}
-          >
-            All Inventory ({results.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setSearchParams({ ...params, saved: "true" })}
-            className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
-              isSavedMode ? "bg-rose-600 text-white shadow-sm" : "text-muted hover:text-ink"
-            }`}
-          >
-            <span>❤️ Saved</span>
-            <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${isSavedMode ? "bg-white/20 text-white" : "bg-rose-100 text-rose-700"}`}>
-              {wishlistCount}
-            </span>
-          </button>
+          {/* Tab switcher: All Cars vs Saved Cars */}
+          <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1">
+            <button
+              type="button"
+              onClick={() => {
+                const next = { ...params };
+                delete next.saved;
+                setSearchParams(next);
+              }}
+              className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
+                !isSavedMode ? "bg-white text-ink shadow-sm" : "text-muted hover:text-ink"
+              }`}
+            >
+              All Inventory ({results.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSearchParams({ ...params, saved: "true" })}
+              className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
+                isSavedMode ? "bg-rose-600 text-white shadow-sm" : "text-muted hover:text-ink"
+              }`}
+            >
+              <span>❤️ Saved</span>
+              <span className={`rounded-full px-1.5 py-0.5 text-xs ${isSavedMode ? "bg-white/20 text-white" : "bg-rose-100 text-rose-700"}`}>
+                {wishlistCount}
+              </span>
+            </button>
+          </div>
         </div>
+        <p className="text-sm text-muted">
+          {isSavedMode
+            ? `You have saved ${wishlistCount} car${wishlistCount === 1 ? "" : "s"} for easy comparison.`
+            : "Direct from verified dealers with VAHAN cross-checked records."}
+        </p>
       </div>
 
       {!isSavedMode && (

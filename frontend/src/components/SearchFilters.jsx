@@ -99,76 +99,79 @@ export default function SearchFilters({ initial = {}, onSearch }) {
             value={filters.q}
             onChange={update("q")}
             placeholder="Search make, model, or locality..."
-            className="focus-ring w-full rounded-xl border hairline pl-9 pr-3 py-2.5 text-sm"
+            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink placeholder:text-muted"
           />
-          <span className="absolute left-3 top-3 text-muted text-xs">🔍</span>
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">🔍</span>
         </div>
 
         {/* City Filter */}
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-2 relative">
           <select
             value={filters.city}
             onChange={update("city")}
-            className="focus-ring w-full rounded-xl border hairline px-3 py-2.5 text-sm bg-white"
+            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink appearance-none"
           >
             <option value="">All Cities</option>
             {facets.cities.map((c) => (
               <option key={c} value={c}>
-                📍 {c}
+                {c}
               </option>
             ))}
           </select>
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">📍</span>
         </div>
 
         {/* Area / Locality Filter */}
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-2 relative">
           <select
             value={filters.area}
             onChange={update("area")}
-            className="focus-ring w-full rounded-xl border hairline px-3 py-2.5 text-sm bg-white"
+            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink appearance-none"
           >
-            <option value="">All Localities / Areas</option>
+            <option value="">All Localities</option>
             {facets.areas.map((a) => (
               <option key={a} value={a}>
                 {a}
               </option>
             ))}
           </select>
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">🏘️</span>
         </div>
 
         {/* Fuel Type Filter */}
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-2 relative">
           <select
             value={filters.fuel}
             onChange={update("fuel")}
-            className="focus-ring w-full rounded-xl border hairline px-3 py-2.5 text-sm bg-white"
+            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink appearance-none"
           >
             <option value="">All Fuel Types</option>
             {facets.fuels.map((f) => (
               <option key={f} value={f}>
-                ⛽ {f}
+                {f}
               </option>
             ))}
           </select>
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">⛽</span>
         </div>
 
         <div className="sm:col-span-2">
           <button
             type="submit"
-            className="focus-ring w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-paper hover:bg-primary-light transition-colors shadow-sm"
+            className="focus-ring h-10 w-full rounded-xl bg-primary text-sm font-semibold text-paper hover:bg-primary-light transition-colors shadow-sm flex items-center justify-center gap-1.5"
           >
-            Apply Filters
+            <span>Apply Filters</span>
           </button>
         </div>
       </div>
 
       {/* Secondary Filter Row */}
       <div className="mt-3 grid gap-3 sm:grid-cols-4 border-t hairline pt-3">
-        <div>
+        <div className="relative">
           <select
             value={filters.brand}
             onChange={update("brand")}
-            className="focus-ring w-full rounded-xl border hairline px-3 py-2 text-xs bg-white text-muted"
+            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink appearance-none"
           >
             <option value="">Brand: Any Brand</option>
             {facets.brands.map((b) => (
@@ -177,26 +180,28 @@ export default function SearchFilters({ initial = {}, onSearch }) {
               </option>
             ))}
           </select>
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">🚘</span>
         </div>
 
-        <div>
+        <div className="relative">
           <select
             value={filters.transmission}
             onChange={update("transmission")}
-            className="focus-ring w-full rounded-xl border hairline px-3 py-2 text-xs bg-white text-muted"
+            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink appearance-none"
           >
             <option value="">Transmission: Any</option>
             <option value="Manual" className="text-ink">Manual</option>
             <option value="Automatic" className="text-ink">Automatic</option>
             <option value="CVT" className="text-ink">CVT</option>
           </select>
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">⚙️</span>
         </div>
 
-        <div>
+        <div className="relative">
           <select
             value={filters.maxPrice}
             onChange={update("maxPrice")}
-            className="focus-ring w-full rounded-xl border hairline px-3 py-2 text-xs bg-white text-muted"
+            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink appearance-none"
           >
             <option value="">Budget: Any Price</option>
             <option value="500000" className="text-ink">Under ₹5 Lakh</option>
@@ -205,9 +210,10 @@ export default function SearchFilters({ initial = {}, onSearch }) {
             <option value="3500000" className="text-ink">Under ₹35 Lakh</option>
             <option value="5000000" className="text-ink">Under ₹50 Lakh</option>
           </select>
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">💰</span>
         </div>
 
-        <div>
+        <div className="relative">
           <select
             value={filters.sort}
             onChange={(e) => {
@@ -216,13 +222,14 @@ export default function SearchFilters({ initial = {}, onSearch }) {
               const cleaned = Object.fromEntries(Object.entries(next).filter(([, v]) => v !== ""));
               onSearch(cleaned);
             }}
-            className="focus-ring w-full rounded-xl border hairline px-3 py-2 text-xs bg-white text-muted font-medium"
+            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink font-medium appearance-none"
           >
             <option value="newest">Sort: Newest First</option>
             <option value="price_asc">Sort: Price (Low to High)</option>
             <option value="price_desc">Sort: Price (High to Low)</option>
             <option value="km_asc">Sort: Lowest Mileage</option>
           </select>
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">↕️</span>
         </div>
       </div>
 

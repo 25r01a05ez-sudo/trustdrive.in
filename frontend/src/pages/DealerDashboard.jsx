@@ -7,10 +7,7 @@ import VehicleImage from "../components/VehicleImage";
 import WindowStickerModal from "../components/WindowStickerModal";
 import DealerVerificationForm from "./DealerVerificationForm";
 import { resizeImageFile } from "../lib/imageResize";
-
-function formatINR(n) {
-  return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0);
-}
+import { formatINR } from "../lib/formatters";
 
 function formatDate(d) {
   if (!d) return "—";

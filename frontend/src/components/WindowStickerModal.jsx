@@ -1,9 +1,6 @@
 import React from "react";
 import VerifiedStamp from "./VerifiedStamp";
-
-function formatINR(n) {
-  return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0);
-}
+import { formatINR } from "../lib/formatters";
 
 export default function WindowStickerModal({ vehicle, dealer, onClose }) {
   if (!vehicle) return null;
