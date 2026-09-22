@@ -23,13 +23,12 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b hairline bg-paper/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link to="/" className="flex items-center gap-2 focus-ring rounded" onClick={closeMenu}>
-          <span className="stamp h-8 w-8 text-primary text-[6px] shrink-0">
-            <svg viewBox="0 0 24 24" className="h-1/2 w-1/2" fill="none" stroke="currentColor" strokeWidth="3">
-              <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-          <Wordmark className="text-xl" />
+        <Link to="/" className="flex items-center focus-ring rounded-lg transition-transform hover:opacity-95" onClick={closeMenu} aria-label="TrustDrive India">
+          <img
+            src="/logo.png"
+            alt="TrustDrive India"
+            className="h-10 w-auto rounded-md shadow-sm"
+          />
         </Link>
 
         <nav className="hidden items-center gap-7 md:flex">

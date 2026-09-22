@@ -6,7 +6,13 @@ export default function Footer() {
     <footer className="border-t hairline mt-24">
       <div className="mx-auto max-w-6xl px-6 py-12 grid gap-8 md:grid-cols-4">
         <div>
-          <Wordmark className="text-lg" />
+          <Link to="/" className="inline-block focus-ring rounded-lg mb-3">
+            <img
+              src="/logo.png"
+              alt="TrustDrive India"
+              className="h-10 w-auto rounded-md shadow-sm"
+            />
+          </Link>
           <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.15em] text-gold-dark">
             Drive smart · Buy safe
           </p>
