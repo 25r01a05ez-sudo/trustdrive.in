@@ -916,15 +916,26 @@ export default function DealerDashboard() {
             {/* Coupon (only for paid_individual) */}
             {activatePayMethod === "paid_individual" && (
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-ink">Coupon Code (optional)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-ink">Dealer Discount Coupon (optional)</label>
+                  <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    Dealer Exclusive
+                  </span>
+                </div>
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Enter coupon code"
+                    placeholder="Enter dealer coupon code (e.g. DEALER20)"
                     value={activateCouponCode}
                     onChange={(e) => {
                       setActivateCouponCode(e.target.value.toUpperCase());
                       setCouponValidation(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleValidateCoupon();
+                      }
                     }}
                     className="focus-ring flex-1 rounded-xl border hairline px-3 py-2 text-sm font-mono uppercase"
                   />

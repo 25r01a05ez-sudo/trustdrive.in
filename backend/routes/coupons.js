@@ -12,6 +12,7 @@
 const express = require("express");
 const store = require("../lib/store");
 const { requireAuth, requireRole } = require("../middleware/auth");
+const { logAuditEvent } = require("../lib/auditLog");
 
 const router = express.Router();
 
@@ -55,6 +56,19 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
       usageLimit: Number(usageLimit || 1),
     });
 
+    await logAuditEvent({
+      userId: req.user.id,
+      userRole: req.user.role,
+      action: "coupon_created",
+      details: {
+        couponId: coupon.id,
+        code: coupon.code,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+        usageLimit: coupon.usageLimit,
+      },
+    }).catch(() => {});
+
     res.status(201).json({ coupon });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -75,6 +89,14 @@ router.patch("/:id", requireAuth, requireRole("admin"), async (req, res) => {
     if (patch.expiresAt) patch.expiresAt = new Date(patch.expiresAt);
 
     const updated = await store.updateCoupon(req.params.id, patch);
+
+    await logAuditEvent({
+      userId: req.user.id,
+      userRole: req.user.role,
+      action: "coupon_updated",
+      details: { couponId: req.params.id, patch },
+    }).catch(() => {});
+
     res.json({ coupon: updated });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -87,6 +109,14 @@ router.delete("/:id", requireAuth, requireRole("admin"), async (req, res) => {
     const coupon = await store.findCouponById(req.params.id);
     if (!coupon) return res.status(404).json({ error: "Coupon not found" });
     await store.deleteCoupon(req.params.id);
+
+    await logAuditEvent({
+      userId: req.user.id,
+      userRole: req.user.role,
+      action: "coupon_deleted",
+      details: { couponId: req.params.id, code: coupon.code },
+    }).catch(() => {});
+
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -101,6 +131,9 @@ router.delete("/:id", requireAuth, requireRole("admin"), async (req, res) => {
  */
 router.post("/validate", requireAuth, requireRole("dealer"), async (req, res) => {
   try {
+    if (!req.user.dealerId) {
+      return res.status(403).json({ valid: false, error: "Only registered dealership accounts can use coupons." });
+    }
     const { code } = req.body || {};
     if (!code) return res.status(400).json({ error: "code is required" });
 
