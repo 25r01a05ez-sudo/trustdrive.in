@@ -1,5 +1,14 @@
 const API_BASE = import.meta.env.VITE_API_BASE || "/api";
 
+export function resolveMediaUrl(path) {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:") || path.startsWith("blob:")) {
+    return path;
+  }
+  const baseUrl = (import.meta.env.VITE_API_BASE || "").replace(/\/api$/, "");
+  return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
 async function request(path, { method = "GET", body, token } = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     method,
@@ -42,6 +51,41 @@ export const api = {
   deleteDealer: (id, token) => request(`/dealers/${id}`, { method: "DELETE", token }),
 
   // vehicles (dealer & admin)
+  uploadInspectionVideo: (file, onProgress, token) => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const url = `${API_BASE}/vehicles/upload-video?filename=${encodeURIComponent(file.name)}`;
+      xhr.open("POST", url, true);
+      if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+      xhr.setRequestHeader("X-File-Name", encodeURIComponent(file.name));
+
+      if (xhr.upload && onProgress) {
+        xhr.upload.onprogress = (evt) => {
+          if (evt.lengthComputable) {
+            const pct = Math.round((evt.loaded / evt.total) * 100);
+            onProgress(pct);
+          }
+        };
+      }
+
+      xhr.onload = () => {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(data);
+          } else {
+            reject(new Error(data.error || `Upload failed (${xhr.status})`));
+          }
+        } catch (e) {
+          reject(new Error("Invalid server response for video upload"));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error("Network connection error during video upload"));
+      xhr.send(file);
+    });
+  },
   createVehicle: (payload, token) => request("/vehicles", { method: "POST", body: payload, token }),
   updateVehicle: (id, payload, token) => request(`/vehicles/${id}`, { method: "PATCH", body: payload, token }),
   deleteVehicle: (id, token) => request(`/vehicles/${id}`, { method: "DELETE", token }),

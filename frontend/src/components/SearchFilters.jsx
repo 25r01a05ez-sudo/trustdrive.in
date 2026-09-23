@@ -99,17 +99,24 @@ export default function SearchFilters({ initial = {}, onSearch }) {
             value={filters.q}
             onChange={update("q")}
             placeholder="Search make, model, or locality..."
-            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink placeholder:text-muted"
+            className="focus-ring w-full rounded-xl border hairline pl-9 pr-3 py-2.5 text-sm"
           />
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">🔍</span>
+          <svg
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
 
         {/* City Filter */}
-        <div className="sm:col-span-2 relative">
+        <div className="sm:col-span-2">
           <select
             value={filters.city}
             onChange={update("city")}
-            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink appearance-none"
+            className="focus-ring w-full rounded-xl border hairline px-3 py-2.5 text-sm bg-white"
           >
             <option value="">All Cities</option>
             {facets.cities.map((c) => (
@@ -118,32 +125,30 @@ export default function SearchFilters({ initial = {}, onSearch }) {
               </option>
             ))}
           </select>
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">📍</span>
         </div>
 
         {/* Area / Locality Filter */}
-        <div className="sm:col-span-2 relative">
+        <div className="sm:col-span-2">
           <select
             value={filters.area}
             onChange={update("area")}
-            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink appearance-none"
+            className="focus-ring w-full rounded-xl border hairline px-3 py-2.5 text-sm bg-white"
           >
-            <option value="">All Localities</option>
+            <option value="">All Localities / Areas</option>
             {facets.areas.map((a) => (
               <option key={a} value={a}>
                 {a}
               </option>
             ))}
           </select>
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">🏘️</span>
         </div>
 
         {/* Fuel Type Filter */}
-        <div className="sm:col-span-2 relative">
+        <div className="sm:col-span-2">
           <select
             value={filters.fuel}
             onChange={update("fuel")}
-            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink appearance-none"
+            className="focus-ring w-full rounded-xl border hairline px-3 py-2.5 text-sm bg-white"
           >
             <option value="">All Fuel Types</option>
             {facets.fuels.map((f) => (
@@ -152,26 +157,25 @@ export default function SearchFilters({ initial = {}, onSearch }) {
               </option>
             ))}
           </select>
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">⛽</span>
         </div>
 
         <div className="sm:col-span-2">
           <button
             type="submit"
-            className="focus-ring h-10 w-full rounded-xl bg-primary text-sm font-semibold text-paper hover:bg-primary-light transition-colors shadow-sm flex items-center justify-center gap-1.5"
+            className="focus-ring w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-paper hover:bg-primary-light transition-colors shadow-sm"
           >
-            <span>Apply Filters</span>
+            Apply Filters
           </button>
         </div>
       </div>
 
       {/* Secondary Filter Row */}
       <div className="mt-3 grid gap-3 sm:grid-cols-4 border-t hairline pt-3">
-        <div className="relative">
+        <div>
           <select
             value={filters.brand}
             onChange={update("brand")}
-            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink appearance-none"
+            className="focus-ring w-full rounded-xl border hairline px-3 py-2 text-xs bg-white text-muted"
           >
             <option value="">Brand: Any Brand</option>
             {facets.brands.map((b) => (
@@ -180,28 +184,26 @@ export default function SearchFilters({ initial = {}, onSearch }) {
               </option>
             ))}
           </select>
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">🚘</span>
         </div>
 
-        <div className="relative">
+        <div>
           <select
             value={filters.transmission}
             onChange={update("transmission")}
-            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink appearance-none"
+            className="focus-ring w-full rounded-xl border hairline px-3 py-2 text-xs bg-white text-muted"
           >
             <option value="">Transmission: Any</option>
             <option value="Manual" className="text-ink">Manual</option>
             <option value="Automatic" className="text-ink">Automatic</option>
             <option value="CVT" className="text-ink">CVT</option>
           </select>
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">⚙️</span>
         </div>
 
-        <div className="relative">
+        <div>
           <select
             value={filters.maxPrice}
             onChange={update("maxPrice")}
-            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink appearance-none"
+            className="focus-ring w-full rounded-xl border hairline px-3 py-2 text-xs bg-white text-muted"
           >
             <option value="">Budget: Any Price</option>
             <option value="500000" className="text-ink">Under ₹5 Lakh</option>
@@ -210,10 +212,9 @@ export default function SearchFilters({ initial = {}, onSearch }) {
             <option value="3500000" className="text-ink">Under ₹35 Lakh</option>
             <option value="5000000" className="text-ink">Under ₹50 Lakh</option>
           </select>
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">💰</span>
         </div>
 
-        <div className="relative">
+        <div>
           <select
             value={filters.sort}
             onChange={(e) => {
@@ -222,14 +223,13 @@ export default function SearchFilters({ initial = {}, onSearch }) {
               const cleaned = Object.fromEntries(Object.entries(next).filter(([, v]) => v !== ""));
               onSearch(cleaned);
             }}
-            className="focus-ring h-10 w-full rounded-xl border hairline pl-9 pr-3 text-sm bg-white text-ink font-medium appearance-none"
+            className="focus-ring w-full rounded-xl border hairline px-3 py-2 text-xs bg-white text-muted font-medium"
           >
             <option value="newest">Sort: Newest First</option>
             <option value="price_asc">Sort: Price (Low to High)</option>
             <option value="price_desc">Sort: Price (High to Low)</option>
             <option value="km_asc">Sort: Lowest Mileage</option>
           </select>
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">↕️</span>
         </div>
       </div>
 
@@ -251,7 +251,7 @@ export default function SearchFilters({ initial = {}, onSearch }) {
 
           {filters.city && (
             <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs text-emerald-800 font-medium">
-              📍 {filters.city}
+              City: {filters.city}
               <button type="button" onClick={() => clearFilter("city")} className="hover:text-danger">
                 ✕
               </button>
@@ -260,7 +260,7 @@ export default function SearchFilters({ initial = {}, onSearch }) {
 
           {filters.area && (
             <span className="inline-flex items-center gap-1 rounded-lg bg-blue-50 border border-blue-200 px-2.5 py-1 text-xs text-blue-800 font-medium">
-              🏘️ {filters.area}
+              Area: {filters.area}
               <button type="button" onClick={() => clearFilter("area")} className="hover:text-danger">
                 ✕
               </button>
@@ -269,7 +269,7 @@ export default function SearchFilters({ initial = {}, onSearch }) {
 
           {filters.fuel && (
             <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs text-amber-800 font-medium">
-              ⛽ {filters.fuel}
+              Fuel: {filters.fuel}
               <button type="button" onClick={() => clearFilter("fuel")} className="hover:text-danger">
                 ✕
               </button>

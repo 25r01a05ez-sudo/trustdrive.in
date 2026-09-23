@@ -2,7 +2,10 @@ import { Link } from "react-router-dom";
 import VerifiedStamp from "./VerifiedStamp";
 import VehicleImage from "./VehicleImage";
 import { useWishlist } from "../lib/useWishlist";
-import { formatINR } from "../lib/formatters";
+
+function formatINR(n) {
+  return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0);
+}
 
 export default function VehicleCard({ vehicle }) {
   const dealer = vehicle.dealer || {};
@@ -39,18 +42,18 @@ export default function VehicleCard({ vehicle }) {
         {/* Top Badges */}
         <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1 pointer-events-none">
           {vehicle.featured && (
-            <span className="rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-2.5 py-0.5 text-xs font-bold text-white shadow-sm flex items-center gap-1">
+            <span className="rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm flex items-center gap-1">
               <span>⭐</span>
               <span>Spotlight</span>
             </span>
           )}
           {vehicle.owners === 1 && (
-            <span className="rounded-full bg-emerald-700/90 px-2 py-0.5 text-xs font-semibold text-white backdrop-blur-sm shadow-sm">
+            <span className="rounded-full bg-emerald-700/90 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm shadow-sm">
               👤 1st Owner
             </span>
           )}
           {Number(vehicle.km) < 30000 && (
-            <span className="rounded-full bg-blue-700/90 px-2 py-0.5 text-xs font-semibold text-white backdrop-blur-sm shadow-sm">
+            <span className="rounded-full bg-blue-700/90 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm shadow-sm">
               ⚡ Low KM
             </span>
           )}
@@ -67,7 +70,7 @@ export default function VehicleCard({ vehicle }) {
           aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
           className="focus-ring absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm transition-transform active:scale-90 hover:scale-110"
         >
-          <span className={`text-base transition-colors ${saved ? "text-rose-600" : "text-slate-400 hover:text-rose-600"}`}>
+          <span className={`text-base transition-colors ${saved ? "text-rose-600" : "text-slate-400 hover:text-rose-500"}`}>
             {saved ? "❤️" : "🤍"}
           </span>
         </button>
@@ -79,7 +82,7 @@ export default function VehicleCard({ vehicle }) {
         )}
 
         {vehicle.images?.length > 1 && (
-          <span className="absolute bottom-2.5 left-2.5 rounded-full bg-ink/70 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm pointer-events-none">
+          <span className="absolute bottom-2.5 left-2.5 rounded-full bg-ink/70 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm pointer-events-none">
             📷 +{vehicle.images.length - 1} photos
           </span>
         )}
@@ -89,9 +92,9 @@ export default function VehicleCard({ vehicle }) {
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-start justify-between gap-2">
           <Link to={`/vehicle/${vehicle.id}`}>
-            <h2 className="font-display text-base font-bold leading-snug text-ink transition-colors hover:text-primary">
+            <h3 className="font-display text-base font-bold leading-snug text-ink transition-colors hover:text-primary">
               {vehicle.brand} {vehicle.model}
-            </h2>
+            </h3>
           </Link>
           <span className="whitespace-nowrap rounded-md bg-paper px-1.5 py-0.5 font-mono text-xs font-semibold text-muted">
             {vehicle.year}
@@ -116,7 +119,7 @@ export default function VehicleCard({ vehicle }) {
             <span className="truncate font-medium text-ink">{dealer.name || "Verified Dealer"}</span>
           </div>
           {dealer.city && (
-            <span className="text-xs text-muted whitespace-nowrap">
+            <span className="text-[11px] text-muted whitespace-nowrap">
               📍 {dealer.city}
             </span>
           )}

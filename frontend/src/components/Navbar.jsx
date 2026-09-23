@@ -27,7 +27,7 @@ export default function Navbar() {
           <img
             src="/logo.png"
             alt="TrustDrives India"
-            className="h-14 md:h-[52px] w-auto max-h-14 object-contain mix-blend-multiply transition-all"
+            className="h-10 w-auto object-contain mix-blend-multiply"
           />
         </Link>
 
@@ -35,10 +35,9 @@ export default function Navbar() {
           <NavLink to="/listings" className={linkClass}>Browse Cars</NavLink>
           <NavLink to="/dealers" className={linkClass}>Dealers</NavLink>
           <NavLink to="/listings?saved=true" className={linkClass}>
-            <span className="text-rose-600">❤️</span>
-            <span className="font-semibold text-rose-600">Saved</span>
+            <span>❤️ Saved</span>
             {wishlistCount > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-xs font-bold text-white shadow-sm animate-pulse">
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white shadow-sm animate-pulse">
                 {wishlistCount}
               </span>
             )}

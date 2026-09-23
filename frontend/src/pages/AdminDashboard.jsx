@@ -1,9 +1,114 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { api } from "../lib/api";
+import { api, resolveMediaUrl } from "../lib/api";
 import DealerDocumentsViewer from "../components/DealerDocumentsViewer";
 import VehicleImage from "../components/VehicleImage";
-import { formatINR } from "../lib/formatters";
+
+function formatINR(n) {
+  return new Intl.NumberFormat("en-IN").format(n || 0);
+}
+
+function InspectionVideoPlayer({ videoUrl }) {
+  const [hasError, setHasError] = useState(false);
+  if (!videoUrl) return null;
+
+  const resolved = resolveMediaUrl(videoUrl);
+
+  // 1. YouTube link
+  const ytMatch = videoUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+  if (ytMatch && ytMatch[1]) {
+    return (
+      <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-slate-700 bg-black shadow-sm">
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${ytMatch[1]}`}
+          title="Inspection Video"
+          className="w-full h-full border-0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+
+  // 2. Google Drive link
+  if (videoUrl.includes("drive.google.com")) {
+    const driveEmbed = videoUrl.replace(/\/view(\?.*)?$/, "/preview");
+    return (
+      <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-slate-700 bg-black shadow-sm">
+        <iframe
+          src={driveEmbed}
+          title="Google Drive Inspection Video"
+          className="w-full h-full border-0"
+          allow="autoplay"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+
+  // 3. Loom link
+  const loomMatch = videoUrl.match(/loom\.com\/share\/([a-zA-Z0-9]+)/);
+  if (loomMatch && loomMatch[1]) {
+    return (
+      <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-slate-700 bg-black shadow-sm">
+        <iframe
+          src={`https://www.loom.com/embed/${loomMatch[1]}`}
+          title="Loom Inspection Video"
+          className="w-full h-full border-0"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+
+  // 4. Standard HTML5 Video stream / upload file
+  return (
+    <div className="space-y-1.5">
+      <div className="relative overflow-hidden rounded-lg border border-slate-700 bg-black shadow-sm">
+        {!hasError ? (
+          <video
+            controls
+            playsInline
+            preload="metadata"
+            src={resolved}
+            onError={() => setHasError(true)}
+            className="w-full max-h-52 object-contain bg-black mx-auto"
+          >
+            <source src={resolved} type="video/mp4" />
+            <source src={resolved} type="video/webm" />
+            Your browser does not support HTML5 video playback.
+          </video>
+        ) : (
+          <div className="p-4 text-center text-xs space-y-2 bg-slate-900 text-slate-200">
+            <p className="text-amber-400 font-medium">⚠️ Live video stream expired or session blob inaccessible.</p>
+            <a
+              href={resolved}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-white text-xs font-semibold hover:bg-primary-light transition-colors"
+            >
+              <span>🔗 Open Direct Stream Link →</span>
+            </a>
+          </div>
+        )}
+      </div>
+      <div className="flex items-center justify-between text-[11px] text-muted">
+        <span className="truncate max-w-[65%] font-mono text-[10px]">
+          {videoUrl.startsWith("/uploads") ? "Server Stored Video" : videoUrl.startsWith("data:") ? "Embedded Video Data" : "Uploaded Inspection Video"}
+        </span>
+        <a
+          href={resolved}
+          target="_blank"
+          rel="noreferrer"
+          download="inspection-video.mp4"
+          className="text-primary hover:underline font-semibold shrink-0"
+        >
+          ⬇️ Open in New Tab
+        </a>
+      </div>
+    </div>
+  );
+}
 
 const QUICK_REJECT_REASONS = [
   "Chassis number mismatch with VAHAN records",
@@ -478,7 +583,7 @@ export default function AdminDashboard() {
                       </div>
 
                       {v.inspectionVideoUrl && (
-                        <div className="pt-2 border-t hairline space-y-1">
+                        <div className="pt-2 border-t hairline space-y-1.5">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1">
                               <span>🎥</span> Inspection Video
@@ -487,13 +592,7 @@ export default function AdminDashboard() {
                               ADMIN ONLY
                             </span>
                           </div>
-                          {v.inspectionVideoUrl.startsWith("data:video") || v.inspectionVideoUrl.startsWith("blob:") || v.inspectionVideoUrl.endsWith(".mp4") || v.inspectionVideoUrl.endsWith(".mov") || v.inspectionVideoUrl.endsWith(".webm") ? (
-                            <video controls src={v.inspectionVideoUrl} className="w-full max-h-44 rounded-lg border border-slate-300 bg-black object-contain" />
-                          ) : (
-                            <a href={v.inspectionVideoUrl} target="_blank" rel="noreferrer" className="block p-2 text-xs font-mono text-blue-600 hover:underline bg-white rounded border hairline truncate">
-                              🔗 Open Inspection Video Link →
-                            </a>
-                          )}
+                          <InspectionVideoPlayer videoUrl={v.inspectionVideoUrl} />
                         </div>
                       )}
 

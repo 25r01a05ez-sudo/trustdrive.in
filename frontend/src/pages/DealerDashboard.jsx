@@ -7,7 +7,10 @@ import VehicleImage from "../components/VehicleImage";
 import WindowStickerModal from "../components/WindowStickerModal";
 import DealerVerificationForm from "./DealerVerificationForm";
 import { resizeImageFile } from "../lib/imageResize";
-import { formatINR } from "../lib/formatters";
+
+function formatINR(n) {
+  return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n || 0);
+}
 
 function formatDate(d) {
   if (!d) return "—";
@@ -62,7 +65,7 @@ export default function DealerDashboard() {
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   const [videoError, setVideoError] = useState("");
 
-  const handleVideoFileChange = (e) => {
+  const handleVideoFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setVideoError("");
@@ -84,33 +87,25 @@ export default function DealerDashboard() {
     setVideoUploading(true);
     setVideoUploadProgress(10);
 
-    if (file.size <= 25 * 1024 * 1024) {
-      const reader = new FileReader();
-      reader.onprogress = (evt) => {
-        if (evt.lengthComputable) {
-          const pct = Math.round((evt.loaded / evt.total) * 100);
-          setVideoUploadProgress(pct);
-        }
-      };
-      reader.onload = () => {
-        setForm((f) => ({ ...f, inspectionVideoUrl: reader.result }));
-        setVideoUploading(false);
-        setVideoUploadProgress(100);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      let p = 25;
-      const timer = setInterval(() => {
-        p += 25;
-        if (p >= 100) {
-          clearInterval(timer);
-          setVideoUploadProgress(100);
-          setVideoUploading(false);
-          setForm((f) => ({ ...f, inspectionVideoUrl: objectUrl }));
-        } else {
-          setVideoUploadProgress(p);
-        }
-      }, 150);
+    try {
+      const token = localStorage.getItem("trustdrive_token") || localStorage.getItem("token") || "";
+      const res = await api.uploadInspectionVideo(file, (pct) => {
+        setVideoUploadProgress(Math.max(10, pct));
+      }, token);
+
+      if (res?.videoUrl) {
+        setForm((f) => ({ ...f, inspectionVideoUrl: res.videoUrl }));
+      } else {
+        setForm((f) => ({ ...f, inspectionVideoUrl: objectUrl }));
+      }
+      setVideoUploadProgress(100);
+    } catch (err) {
+      console.warn("Direct upload fallback to local preview:", err);
+      // Fallback for offline demo mode
+      setForm((f) => ({ ...f, inspectionVideoUrl: objectUrl }));
+      setVideoUploadProgress(100);
+    } finally {
+      setVideoUploading(false);
     }
   };
 

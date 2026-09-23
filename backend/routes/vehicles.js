@@ -1,4 +1,7 @@
 const express = require("express");
+const path = require("path");
+const fs = require("fs");
+const { v4: uuid } = require("uuid");
 const store = require("../lib/store");
 const { requireAuth, optionalAuth, requireRole } = require("../middleware/auth");
 const { sanitizeVehicle, sanitizeVehicles } = require("../lib/vehicleVisibility");
@@ -6,7 +9,44 @@ const { logAuditEvent } = require("../lib/auditLog");
 const { aiRateLimiter } = require("../lib/aiThrottle");
 const { notifyDealerOnVehicleDecision } = require("../lib/whatsapp");
 
+const uploadsDir = path.join(__dirname, "..", "uploads");
+const videosDir = path.join(uploadsDir, "videos");
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
+
 const router = express.Router();
+
+// POST /api/vehicles/upload-video (Dedicated Inspection Video Upload - Up to 999MB)
+// Streams directly to disk for zero-memory footprint and instant streaming playback.
+router.post("/upload-video", requireAuth, requireRole("dealer", "admin"), (req, res) => {
+  try {
+    const rawHeaderName = req.headers["x-file-name"] || req.query.filename || "inspection.mp4";
+    const cleanName = decodeURIComponent(rawHeaderName).replace(/[^a-zA-Z0-9._-]/g, "_");
+    const ext = path.extname(cleanName) || ".mp4";
+    const filename = `inspection-${Date.now()}-${uuid().slice(0, 8)}${ext}`;
+    const filePath = path.join(videosDir, filename);
+    const writeStream = fs.createWriteStream(filePath);
+
+    req.pipe(writeStream);
+
+    writeStream.on("finish", () => {
+      const videoUrl = `/uploads/videos/${filename}`;
+      res.json({
+        videoUrl,
+        filename,
+        message: "Inspection video uploaded successfully",
+      });
+    });
+
+    writeStream.on("error", (err) => {
+      console.error("[video writeStream error]", err);
+      res.status(500).json({ error: "Failed to save video to storage" });
+    });
+  } catch (err) {
+    console.error("[upload-video error]", err);
+    res.status(500).json({ error: "Video upload failed" });
+  }
+});
 
 // GET /api/vehicles (admin-only -- every vehicle regardless of status)
 // Logs audit event when admin views full vehicle directory with unmasked data.

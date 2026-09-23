@@ -8,7 +8,9 @@ import VehicleCard from "../components/VehicleCard";
 import VehicleImage from "../components/VehicleImage";
 import WindowStickerModal from "../components/WindowStickerModal";
 
-import { formatINR } from "../lib/formatters";
+function formatINR(n) {
+  return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n);
+}
 
 export default function VehicleDetail() {
   const { id } = useParams();

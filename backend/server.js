@@ -36,8 +36,20 @@ const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
 
+const path = require("path");
+const fs = require("fs");
+
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+// Ensure upload directories exist for inspection videos and docs
+const uploadsDir = path.join(__dirname, "uploads");
+const videosDir = path.join(uploadsDir, "videos");
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
+
+// Serve uploaded videos and files with byte-range (206 partial content) streaming support
+app.use("/uploads", express.static(uploadsDir));
 
 // Touch the store on boot so the "in-memory vs Postgres" mode logs immediately.
 require("./lib/store");
